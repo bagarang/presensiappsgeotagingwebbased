@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GEOPRESEN - Work Hard</title>
     <style>
-        /* --- TEMA KERJA KERAS (HARD WORK THEME) --- */
+        /* --- TEMA KERJA KERAS --- */
         :root {
             --primary-dark: #1a252f;
             --primary-light: #2c3e50;
@@ -16,11 +16,11 @@
             --white: #ffffff;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
 
         body {
             background-color: #34495e;
-            height: 100dvh; /* Solusi overlap toolbar browser */
+            height: 100dvh; /* Menggunakan Dynamic Viewport untuk Mobile */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -35,9 +35,9 @@
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
             overflow: hidden;
-            display: flex; /* Memastikan isi mengikuti frame */
         }
 
+        /* --- VIEW SYSTEM --- */
         .view {
             display: none;
             width: 100%;
@@ -48,109 +48,174 @@
             left: 0;
             background: var(--bg-app);
             z-index: 10;
-            overflow-y: auto; /* Mencegah konten tertumpuk jika layar pendek */
+            overflow-y: auto; /* Memungkinkan scroll jika konten panjang di mobile */
         }
         .view.active { display: flex; z-index: 20; }
 
-        /* Fix Mirroring untuk Kamera Depan */
-        .mirror { transform: scaleX(-1); }
-
         h1, h2, h3 { font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
         button { border: none; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        button:active { transform: scale(0.95); }
 
-        /* LOGIN PAGE */
+        /* === PAGE 1: LOGIN === */
         #view-login {
             justify-content: center;
             align-items: center;
             background: linear-gradient(rgba(26, 37, 47, 0.85), rgba(26, 37, 47, 0.95)), 
                         url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=1000');
             background-size: cover;
+            background-position: center;
             padding: 2rem;
         }
+
         .login-box {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            padding: 2.5rem 2rem;
+            padding: 2.5rem 1.5rem;
             border-radius: 4px;
             width: 100%;
             border-top: 4px solid var(--accent);
             text-align: center;
         }
-        .logo-text { font-size: 2.8rem; color: var(--white); margin-bottom: 0.5rem; }
-        .tagline { font-size: 0.9rem; color: var(--accent); margin-bottom: 2rem; letter-spacing: 2px; font-weight: bold; }
-        input { width: 100%; padding: 15px; margin-bottom: 1rem; border-radius: 4px; font-size: 1rem; }
-        .btn-login { width: 100%; padding: 15px; background: var(--accent); color: var(--white); text-transform: uppercase; }
 
-        /* HOME PAGE */
-        #view-home { justify-content: center; align-items: center; padding: 1.5rem; }
-        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 1.2rem; width: 100%; }
-        .btn-menu {
-            padding: 1.5rem; background: var(--white); color: var(--primary-dark);
-            border-radius: 8px; border-left: 6px solid var(--accent);
-            display: flex; align-items: center; justify-content: space-between;
+        .logo-text { font-size: 2.4rem; color: var(--white); margin-bottom: 0.5rem; }
+        .tagline { font-size: 0.8rem; color: var(--accent); margin-bottom: 2rem; letter-spacing: 2px; }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 1rem;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            font-size: 1rem;
         }
 
-        /* CAMERA PAGE */
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: var(--white);
+            text-transform: uppercase;
+        }
+
+        /* === PAGE 2: HOME === */
+        #view-home { padding: 1.5rem; justify-content: center; }
+        .header-slogan { text-align: center; margin-bottom: 2rem; }
+        .menu-grid { display: grid; gap: 1rem; width: 100%; }
+        .btn-menu {
+            padding: 1.2rem;
+            background: var(--white);
+            color: var(--primary-dark);
+            border-radius: 8px;
+            border-left: 6px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        /* === PAGE 3: PROFILE === */
+        .profile-header-bg { background: var(--primary-dark); height: 100px; width: 100%; flex-shrink: 0; }
+        .profile-content { padding: 0 20px 40px; margin-top: -50px; text-align: center; }
+        .profile-pic-box {
+            width: 110px; height: 110px; margin: 0 auto 15px;
+            position: relative; border: 4px solid var(--white);
+            border-radius: 50%; background: #ddd;
+        }
+        .profile-pic { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .edit-badge {
+            position: absolute; bottom: 0; right: 0;
+            background: var(--accent); color: white;
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+
+        /* === PAGE 4: KAMERA === */
         #view-camera { background: black; overflow: hidden; }
         #camera-video, #photo-result { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         #photo-result { z-index: 2; display: none; }
-        
+
         .camera-ui {
             position: absolute; bottom: 0; left: 0; right: 0;
             padding: 20px; z-index: 10;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
             display: flex; flex-direction: column; align-items: center; gap: 15px;
         }
 
-        /* Flexbox Sempurna untuk Tombol Kamera */
-        .controls-row {
-            display: flex;
-            width: 100%;
-            align-items: center;
-            justify-content: space-around; /* Menjaga jarak antar elemen tetap simetris */
+        .camera-controls { display: flex; align-items: center; gap: 30px; }
+        
+        /* Tombol Ganti Kamera */
+        .btn-switch {
+            background: rgba(255,255,255,0.2);
+            color: white; width: 45px; height: 45px;
+            border-radius: 50%; font-size: 1.2rem;
         }
 
         .shutter-hard {
-            width: 75px; height: 75px; border-radius: 50%;
-            border: 4px solid var(--white); background: transparent; position: relative;
+            width: 70px; height: 70px; border-radius: 50%;
+            border: 4px solid var(--white); background: transparent;
+            position: relative;
         }
         .shutter-hard::after {
-            content: ''; position: absolute; top: 8px; left: 8px; right: 8px; bottom: 8px;
+            content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
             background: var(--white); border-radius: 50%;
         }
 
-        .btn-cam-switch {
-            background: rgba(255,255,255,0.2); color: white;
-            width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem;
+        .info-card {
+            background: white; width: 100%; padding: 12px;
+            border-radius: 4px; border-left: 4px solid var(--accent);
         }
-
-        .info-card { background: rgba(255,255,255,0.95); width: 100%; padding: 15px; border-radius: 4px; border-left: 4px solid var(--accent); }
         .action-row { display: none; gap: 10px; width: 100%; }
         .btn-action { flex: 1; padding: 12px; color: white; border-radius: 4px; }
+        
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div id="app">
+
     <section id="view-login" class="view active">
         <div class="login-box">
             <h1 class="logo-text">GEOPRESEN</h1>
             <div class="tagline">DEDIKASI TANPA BATAS</div>
-            <input type="text" id="username" placeholder="USERNAME">
-            <input type="password" id="password" placeholder="PASSWORD">
+            <input type="text" id="username" placeholder="USERNAME (Test)">
+            <input type="password" id="password" placeholder="PASSWORD (1234)">
             <button class="btn-login" onclick="handleLogin()">MASUK KERJA</button>
         </div>
     </section>
 
     <section id="view-home" class="view">
-        <div style="text-align: center; margin-bottom: 2rem;">
+        <div class="header-slogan" style="margin-top: 2rem;">
             <h2>SELAMAT DATANG</h2>
             <p>"Kerja Keras Adalah Kunci Kesuksesan"</p>
         </div>
         <div class="menu-grid">
-            <button class="btn-menu" onclick="navTo('view-camera')"><span>📷 AMBIL ABSEN</span> <span>❯</span></button>
-            <button class="btn-menu" onclick="handleLogout()" style="background:#e74c3c; color:white; border-left-color:#c0392b;"><span>🚪 LOGOUT</span></button>
+            <button class="btn-menu" onclick="navTo('view-profile')"><span>👷 PROFILE</span> ❯</button>
+            <button class="btn-menu" onclick="navTo('view-camera')"><span>📷 AMBIL ABSEN</span> ❯</button>
+            <button class="btn-menu" onclick="handleLogout()" style="background:#e74c3c; color:white; border:none; margin-top:1rem;">
+                <span>🚪 LOGOUT</span>
+            </button>
+        </div>
+    </section>
+
+    <section id="view-profile" class="view">
+        <div class="profile-header-bg">
+             <button onclick="navTo('view-home')" style="margin:15px; background:rgba(0,0,0,0.3); color:white; padding:5px 10px; border-radius:4px;">⬅ KEMBALI</button>
+        </div>
+        <div class="profile-content">
+            <div class="profile-pic-box">
+                <img src="https://via.placeholder.com/150" id="prof-img" class="profile-pic">
+                <label class="edit-badge">✎<input type="file" hidden accept="image/*" onchange="updateImg(this)"></label>
+            </div>
+            <h2 contenteditable="true" id="prof-name">AGUNG</h2>
+            <p contenteditable="true" id="prof-job" style="color:var(--accent); font-weight:bold;">SUPERVISI LAPANGAN</p>
+            <p id="prof-nip">NIP: 12345678</p>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <h4 style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">DATA PEGAWAI</h4>
+                <p>Status: <b style="color:green">Aktif</b></p>
+                <p>Wilayah: Lapangan Pusat</p>
+            </div>
         </div>
     </section>
 
@@ -161,53 +226,70 @@
 
         <div class="camera-ui">
             <div class="info-card" id="info-panel" style="display:none;">
-                <p id="info-time" style="font-weight:bold;"></p>
-                <p id="info-loc" style="color:var(--accent); font-size:0.8rem;"></p>
+                <p id="info-time" style="font-weight:bold; font-size:0.8rem;"></p>
+                <p id="info-loc" style="font-size:0.8rem; color:var(--accent);"></p>
             </div>
 
-            <div class="controls-row" id="shutter-area">
-                <button class="btn-cam-switch" onclick="switchCamera()">🔄</button>
+            <div class="camera-controls" id="shutter-area">
+                <button class="btn-switch" onclick="switchCamera()">🔄</button>
                 <button class="shutter-hard" onclick="takePhoto()"></button>
-                <div style="width: 45px;"></div> </div>
+                <div style="width:45px;"></div> </div>
 
             <div class="action-row" id="action-btns">
                 <button class="btn-action" style="background:#7f8c8d" onclick="resetCamera()">ULANGI</button>
                 <button class="btn-action" style="background:var(--accent)" onclick="sendData()">KIRIM</button>
             </div>
-            <button onclick="stopCamAndBack()" style="background:none; color:white; text-decoration:underline; font-size:0.8rem;">BATAL</button>
+
+            <button onclick="stopCamAndBack()" style="background:none; color:white; text-decoration:underline;">BATAL</button>
         </div>
     </section>
+
 </div>
 
 <script>
-    let stream = null;
-    let facingMode = "environment"; // Default belakang
+    let currentStream = null;
+    let currentFacingMode = "environment"; // Default kamera belakang
 
     function navTo(viewId) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
         if(viewId === 'view-camera') startCamera(); else stopCamera();
     }
 
+    function handleLogin() {
+        if(document.getElementById('username').value === "Test" && document.getElementById('password').value === "1234") {
+            navTo('view-home');
+        } else alert("Salah!");
+    }
+
+    function handleLogout() {
+        if(confirm("Logout?")) navTo('view-login');
+    }
+
+    // --- KAMERA LOGIC ---
     async function startCamera() {
         stopCamera();
         const video = document.getElementById('camera-video');
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: facingMode } 
+            currentStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: currentFacingMode } 
             });
-            video.srcObject = stream;
-            // Mirroring jika pakai kamera depan
-            if(facingMode === "user") video.classList.add('mirror');
-            else video.classList.remove('mirror');
+            video.srcObject = currentStream;
         } catch (err) {
-            alert("Gagal akses kamera!");
+            alert("Kamera Error: " + err);
             navTo('view-home');
         }
     }
 
+    function stopCamera() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+    }
+
     function switchCamera() {
-        facingMode = (facingMode === "environment") ? "user" : "environment";
+        currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
         startCamera();
     }
 
@@ -218,14 +300,7 @@
         
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // Handle mirror saat jepret
-        if(facingMode === "user") {
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-        }
-        ctx.drawImage(video, 0, 0);
+        canvas.getContext('2d').drawImage(video, 0, 0);
         
         result.src = canvas.toDataURL('image/png');
         result.style.display = 'block';
@@ -239,10 +314,6 @@
         stopCamera();
     }
 
-    function stopCamera() {
-        if(stream) stream.getTracks().forEach(t => t.stop());
-    }
-
     function resetCamera() {
         document.getElementById('photo-result').style.display = 'none';
         document.getElementById('camera-video').style.display = 'block';
@@ -252,22 +323,34 @@
         startCamera();
     }
 
-    function stopCamAndBack() { stopCamera(); navTo('view-home'); }
-
-    function handleLogin() { navTo('view-home'); }
-    function handleLogout() { navTo('view-login'); }
+    function stopCamAndBack() {
+        stopCamera();
+        navTo('view-home');
+    }
 
     function getMetadata() {
         const now = new Date();
-        document.getElementById('info-time').innerText = now.toLocaleString('id-ID');
+        document.getElementById('info-time').innerText = "WAKTU: " + now.toLocaleString('id-ID');
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
-                document.getElementById('info-loc').innerText = `Lat: ${pos.coords.latitude.toFixed(5)}, Lng: ${pos.coords.longitude.toFixed(5)}`;
+                document.getElementById('info-loc').innerText = `LOKASI: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
             });
         }
     }
 
-    function sendData() { alert("Absen Berhasil!"); resetCamera(); navTo('view-home'); }
+    function sendData() {
+        alert("Absen Terkirim!");
+        resetCamera();
+        navTo('view-home');
+    }
+
+    function updateImg(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById('prof-img').src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 </script>
 </body>
 </html>
