@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GEOPRESEN</title>
+    <style>
+        /* --- CSS SETUP --- */
+        :root {
+            --primary: #007bff;
+            --primary-dark: #0056b3;
+            --bg-light: #f4f6f9;
+            --white: #ffffff;
+            --text-dark: #333333;
+            --danger: #dc3545;
+            --success: #28a745;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background-color: var(--bg-light);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Container App */
+        #app {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            background: var(--white);
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden; /* Mencegah scroll global */
+        }
+
+        /* --- HALAMAN (VIEWS) --- */
+        .view {
+            display: none; /* Default sembunyi */
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--white);
+            z-index: 10;
+        }
+
+        .view.active {
+            display: flex;
+            z-index: 20;
+        }
+
+        /* --- PAGE 1: LOGIN --- */
+        #view-login {
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            text-align: center;
+        }
+
+        .login-box {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            padding: 2rem;
+            border-radius: 15px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1.logo { font-size: 2.5rem; margin-bottom: 2rem; letter-spacing: 2px; }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .btn-login { background: var(--white); color: var(--primary); }
+        .btn-menu { background: var(--primary); color: white; padding: 15px; font-size: 1.1rem; }
+        .btn-logout { background: var(--danger); color: white; }
+        .btn-back { background: #6c757d; color: white; width: auto; padding: 10px 20px; margin-bottom: 10px; align-self: flex-start; }
+
+        /* --- PAGE 2: HOME (MENU UTAMA) --- */
+        #view-home {
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background: #f0f2f5;
+        }
+
+        .menu-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .menu-card h2 { margin-bottom: 2rem; color: var(--text-dark); }
+
+        /* --- PAGE 3: PROFILE --- */
+        #view-profile { padding: 20px; overflow-y: auto; }
+        .profile-header { text-align: center; margin-bottom: 20px; }
+        .profile-pic-container {
+            width: 120px; height: 120px;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+        .profile-pic {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary);
+        }
+        .upload-btn {
+            position: absolute; bottom: 0; right: 0;
+            background: var(--primary); color: white;
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+        .editable { border-bottom: 1px dashed #ccc; padding: 0 5px; }
+        .editable:focus { border-bottom: 1px solid var(--primary); background: #eef5ff; outline: none; }
+
+        /* --- PAGE 4: ABSEN (CAMERA) --- */
+        #view-camera { background: black; }
+        
+        /* Video Feed Full Screen */
+        #camera-video {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            position: absolute; top: 0; left: 0;
+            z-index: 1;
+        }
+        
+        /* Overlay Hasil Foto */
+        #photo-result {
+            display: none;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            position: absolute; top: 0; left: 0;
+            z-index: 2;
+        }
+
+        /* Kontrol Kamera (Overlay) */
+        .camera-controls {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 20px;
+            z-index: 10;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .shutter {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            background: white;
+            border: 5px solid rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+        .shutter:active { transform: scale(0.9); background: #ddd; }
+
+        .info-panel {
+            background: rgba(255,255,255,0.9);
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            color: black;
+            font-size: 0.9rem;
+            display: none; /* Hidden default */
+        }
+        
+        .action-btns { display: flex; gap: 10px; width: 100%; display: none; }
+
+        /* Helper */
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <!-- === PAGE 1: LOGIN === -->
+    <section id="view-login" class="view active">
+        <h1 class="logo">GEOPRESEN</h1>
+        <div class="login-box">
+            <input type="text" id="username" placeholder="Username (Test)">
+            <input type="password" id="password" placeholder="Password (1234)">
+            <button class="btn-login" onclick="handleLogin()">LOGIN MASUK</button>
+        </div>
+    </section>
+
+    <!-- === PAGE 2: HOME (MENU UTAMA) === -->
+    <section id="view-home" class="view">
+        <div class="menu-card">
+            <h2>Selamat Datang</h2>
+            <button class="btn-menu" onclick="navTo('view-profile')">👤 PROFILE</button>
+            <button class="btn-menu" onclick="navTo('view-camera')">📷 AMBIL ABSEN</button>
+            <button class="btn-menu btn-logout" onclick="handleLogout()">🚪 LOG OUT</button>
+        </div>
+    </section>
+
+    <!-- === PAGE 3: PROFILE === -->
+    <section id="view-profile" class="view">
+        <button class="btn-back" onclick="navTo('view-home')">⬅ Kembali</button>
+        <div class="profile-header">
+            <div class="profile-pic-container">
+                <img src="https://via.placeholder.com/150" id="prof-img" class="profile-pic">
+                <label class="upload-btn">📷
+                    <input type="file" hidden accept="image/*" onchange="updateImg(this)">
+                </label>
+            </div>
+            <h2 class="editable" contenteditable="true" id="prof-name">Agung</h2>
+            <p class="editable" contenteditable="true" id="prof-job">Supervisi Lapangan</p>
+            <p class="editable" contenteditable="true" style="margin-top:5px; color:gray;" id="prof-nip">NIP: 12345678</p>
+        </div>
+        <div style="padding: 10px; background: #fff; border-radius: 10px; color: #666;">
+            <p>Klik teks di atas untuk mengedit data pribadi Anda.</p>
+        </div>
+    </section>
+
+    <!-- === PAGE 4: KAMERA ABSEN === -->
+    <section id="view-camera" class="view">
+        <!-- Video Langsung -->
+        <video id="camera-video" autoplay playsinline muted></video>
+        
+        <!-- Canvas Tersembunyi untuk Capture -->
+        <canvas id="canvas" class="hidden"></canvas>
+        
+        <!-- Hasil Foto (Frozen) -->
+        <img id="photo-result" alt="Hasil">
+
+        <div class="camera-controls">
+            <!-- Info GPS & Waktu -->
+            <div class="info-panel" id="info-panel">
+                <div><b>Waktu:</b> <span id="info-time">--:--</span></div>
+                <div style="margin-top:5px;"><b>Lokasi:</b> <span id="info-loc" style="font-size:0.8rem; color:green;">Mendeteksi...</span></div>
+            </div>
+
+            <!-- Tombol Rana (Jepret) -->
+            <div id="shutter-btn-container">
+                <div class="shutter" onclick="takePhoto()"></div>
+            </div>
+
+            <!-- Tombol Aksi Setelah Foto -->
+            <div class="action-btns" id="action-btns">
+                <button class="btn-back" style="flex:1; margin:0;" onclick="resetCamera()">Ulangi</button>
+                <button style="flex:1; margin:0; background:var(--success); color:white;" onclick="sendData()">Kirim</button>
+            </div>
+
+            <button onclick="stopCamAndBack()" style="background:transparent; border:1px solid rgba(255,255,255,0.5); color:white; padding:5px 15px; border-radius:20px; margin-top:10px;">Batal</button>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    // --- NAVIGASI HALAMAN ---
+    function navTo(viewId) {
+        // Sembunyikan semua view
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        // Tampilkan view tujuan
+        document.getElementById(viewId).classList.add('active');
+
+        // Logic spesifik per halaman
+        if(viewId === 'view-camera') {
+            startCamera(); // Langsung buka kamera
+        } else {
+            stopCamera(); // Matikan kamera jika pindah halaman lain
+        }
+    }
+
+    // --- 1. LOGIN & LOGOUT ---
+    function handleLogin() {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+
+        if(u === "Test" && p === "1234") {
+            // Langsung direct ke Page 2 (Home)
+            navTo('view-home');
+        } else {
+            alert("Username atau Password salah!");
+        }
+    }
+
+    function handleLogout() {
+        if(confirm("Yakin ingin keluar?")) {
+            // Matikan kamera jika sedang nyala
+            stopCamera();
+            // Bersihkan form
+            document.getElementById('username').value = "";
+            document.getElementById('password').value = "";
+            // Reset tampilan kamera jika perlu
+            resetCamera();
+            // Direct ke Page 1 (Login)
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-login').classList.add('active');
+        }
+    }
+
+    // --- 2. PROFILE ---
+    function updateImg(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('prof-img').src = e.target.result;
+                localStorage.setItem('myPic', e.target.result);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    // Load saved pic
+    if(localStorage.getItem('myPic')) document.getElementById('prof-img').src = localStorage.getItem('myPic');
+
+    // --- 3. KAMERA (LANGSUNG TERBUKA) ---
+    let stream = null;
+
+    async function startCamera() {
+        const video = document.getElementById('camera-video');
+        const shutter = document.getElementById('shutter-btn-container');
+        const info = document.getElementById('info-panel');
+        const actions = document.getElementById('action-btns');
+        const result = document.getElementById('photo-result');
+
+        // Reset UI ke mode kamera live
+        result.style.display = 'none';
+        video.style.display = 'block';
+        shutter.classList.remove('hidden');
+        info.style.display = 'none';
+        actions.style.display = 'none';
+
+        try {
+            // Request Kamera Belakang
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } 
+            });
+            video.srcObject = stream;
+        } catch (err) {
+            alert("Gagal membuka kamera! Pastikan izin kamera diberikan.");
+            navTo('view-home'); // Balik ke home jika gagal
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    function stopCamAndBack() {
+        stopCamera();
+        navTo('view-home');
+    }
+
+    // Ambil Foto
+    function takePhoto() {
+        const video = document.getElementById('camera-video');
+        const canvas = document.getElementById('canvas');
+        const result = document.getElementById('photo-result');
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        
+        // Tampilkan hasil, sembunyikan video live
+        result.src = canvas.toDataURL('image/png');
+        result.style.display = 'block';
+        video.style.display = 'none';
+        
+        // Matikan stream untuk hemat baterai
+        stopCamera();
+
+        // Tampilkan tombol & info
+        document.getElementById('shutter-btn-container').classList.add('hidden');
+        document.getElementById('info-panel').style.display = 'block';
+        document.getElementById('action-btns').style.display = 'flex';
+
+        // Ambil Data GPS & Waktu
+        getMetadata();
+    }
+
+    function resetCamera() {
+        // Bersihkan UI
+        document.getElementById('photo-result').style.display = 'none';
+        document.getElementById('info-panel').style.display = 'none';
+        document.getElementById('action-btns').style.display = 'none';
+        document.getElementById('shutter-btn-container').classList.remove('hidden');
+        // Jalankan ulang kamera
+        startCamera();
+    }
+
+    function getMetadata() {
+        const now = new Date();
+        document.getElementById('info-time').innerText = now.toLocaleTimeString('id-ID') + " " + now.toLocaleDateString('id-ID');
+
+        const locSpan = document.getElementById('info-loc');
+        locSpan.innerText = "Mencari GPS...";
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(5);
+                    const lng = pos.coords.longitude.toFixed(5);
+                    locSpan.innerText = `Lat: ${lat}, Lng: ${lng}`;
+                },
+                (err) => {
+                    locSpan.innerText = "GPS Gagal";
+                    locSpan.style.color = "red";
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        } else {
+            locSpan.innerText = "No GPS";
+        }
+    }
+
+    function sendData() {
+        alert("Data Berhasil Dikirim!");
+        resetCamera();
+        navTo('view-home');
+    }
+
+</script>
+
+</body>
+</html>
