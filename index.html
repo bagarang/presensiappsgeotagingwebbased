@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GEOPRESEN - Work Hard</title>
+    <title>GEOPRESEN PRO - Dedikasi Tanpa Batas</title>
     <style>
-        /* --- TEMA KERJA KERAS --- */
         :root {
-            --primary-dark: #1a252f;
-            --primary-light: #2c3e50;
+            --primary: #1a252f;
             --accent: #e67e22;
-            --accent-hover: #d35400;
-            --bg-app: #ecf0f1;
-            --text-main: #2c3e50;
+            --accent-light: #ff9f43;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+            --bg-body: #f4f7f6;
             --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.9);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', sans-serif; }
 
         body {
-            background-color: #34495e;
-            height: 100dvh; /* Menggunakan Dynamic Viewport untuk Mobile */
+            background-color: #2c3e50;
+            height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,319 +33,516 @@
             width: 100%;
             max-width: 480px;
             height: 100%;
-            background: var(--bg-app);
+            background: var(--bg-body);
             position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            overflow: hidden;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
         }
+
+        /* --- NAVIGATION --- */
+        .bottom-nav {
+            display: none;
+            background: var(--white);
+            height: 70px;
+            border-top: 1px solid #ddd;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+        .nav-item {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: 0.3s;
+            padding: 5px;
+        }
+        .nav-item.active { color: var(--accent); font-weight: bold; }
+        .nav-item i { font-size: 1.3rem; display: block; margin-bottom: 4px; }
 
         /* --- VIEW SYSTEM --- */
         .view {
             display: none;
+            flex: 1;
             width: 100%;
-            height: 100%;
-            flex-direction: column;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: var(--bg-app);
-            z-index: 10;
-            overflow-y: auto; /* Memungkinkan scroll jika konten panjang di mobile */
+            overflow-y: auto;
+            padding-bottom: 80px;
         }
-        .view.active { display: flex; z-index: 20; }
+        .view.active { display: flex; flex-direction: column; }
 
-        h1, h2, h3 { font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
-        button { border: none; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-        button:active { transform: scale(0.95); }
-
-        /* === PAGE 1: LOGIN === */
+        /* === LOGIN VIEW === */
         #view-login {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1541888946425-d81bb19480c5?q=80&w=1000');
+            background-size: cover;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(rgba(26, 37, 47, 0.85), rgba(26, 37, 47, 0.95)), 
-                        url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=1000');
-            background-size: cover;
-            background-position: center;
             padding: 2rem;
         }
-
         .login-box {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--glass);
             backdrop-filter: blur(10px);
-            padding: 2.5rem 1.5rem;
-            border-radius: 4px;
+            padding: 2rem;
+            border-radius: 15px;
             width: 100%;
-            border-top: 4px solid var(--accent);
             text-align: center;
         }
-
-        .logo-text { font-size: 2.4rem; color: var(--white); margin-bottom: 0.5rem; }
-        .tagline { font-size: 0.8rem; color: var(--accent); margin-bottom: 2rem; letter-spacing: 2px; }
-
-        input {
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 1rem;
-            border: 2px solid transparent;
-            border-radius: 4px;
-            font-size: 1rem;
+        .btn-main {
+            width: 100%; padding: 15px; background: var(--accent); color: white;
+            border: none; border-radius: 8px; font-weight: bold; text-transform: uppercase;
+            cursor: pointer; margin-top: 10px;
+            transition: all 0.3s;
+        }
+        .btn-main:active {
+            transform: scale(0.98);
         }
 
-        .btn-login {
-            width: 100%;
-            padding: 15px;
-            background: var(--accent);
-            color: var(--white);
-            text-transform: uppercase;
+        /* === COMPONENT STYLES === */
+        .card {
+            background: white; margin: 15px; padding: 15px; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .status-badge { 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            font-size: 0.7rem; 
+            color: white; 
+            font-weight: bold;
+        }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid #eee;
         }
 
-        /* === PAGE 2: HOME === */
-        #view-home { padding: 1.5rem; justify-content: center; }
-        .header-slogan { text-align: center; margin-bottom: 2rem; }
-        .menu-grid { display: grid; gap: 1rem; width: 100%; }
-        .btn-menu {
-            padding: 1.2rem;
-            background: var(--white);
-            color: var(--primary-dark);
-            border-radius: 8px;
-            border-left: 6px solid var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        /* === PAGE 3: PROFILE === */
-        .profile-header-bg { background: var(--primary-dark); height: 100px; width: 100%; flex-shrink: 0; }
-        .profile-content { padding: 0 20px 40px; margin-top: -50px; text-align: center; }
+        /* === PROFILE STYLES === */
         .profile-pic-box {
-            width: 110px; height: 110px; margin: 0 auto 15px;
-            position: relative; border: 4px solid var(--white);
+            width: 120px; height: 120px; margin: -60px auto 15px;
+            position: relative; border: 5px solid white;
             border-radius: 50%; background: #ddd;
         }
         .profile-pic { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .edit-badge {
-            position: absolute; bottom: 0; right: 0;
+            position: absolute; bottom: 5px; right: 5px;
             background: var(--accent); color: white;
             width: 32px; height: 32px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
 
-        /* === PAGE 4: KAMERA === */
-        #view-camera { background: black; overflow: hidden; }
-        #camera-video, #photo-result { width: 100%; height: 100%; object-fit: cover; position: absolute; }
-        #photo-result { z-index: 2; display: none; }
-
-        .camera-ui {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 20px; z-index: 10;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            display: flex; flex-direction: column; align-items: center; gap: 15px;
-        }
-
-        .camera-controls { display: flex; align-items: center; gap: 30px; }
-        
-        /* Tombol Ganti Kamera */
-        .btn-switch {
-            background: rgba(255,255,255,0.2);
-            color: white; width: 45px; height: 45px;
-            border-radius: 50%; font-size: 1.2rem;
-        }
-
-        .shutter-hard {
-            width: 70px; height: 70px; border-radius: 50%;
-            border: 4px solid var(--white); background: transparent;
+        /* === CAMERA VIEW === */
+        #view-camera { 
+            background: #000; 
+            padding-bottom: 0; 
             position: relative;
         }
-        .shutter-hard::after {
-            content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
-            background: var(--white); border-radius: 50%;
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #camera-video, #photo-result { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
+        .camera-overlay {
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            padding: 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            color: white; 
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .swap-camera-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            border: 2px solid white;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .swap-camera-btn:active {
+            background: rgba(255,255,255,0.5);
+            transform: scale(0.95);
+        }
+        
+        .shutter {
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            border: 5px solid white;
+            background: transparent; 
+            margin: 20px auto;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .shutter:active {
+            transform: scale(0.9);
         }
 
-        .info-card {
-            background: white; width: 100%; padding: 12px;
-            border-radius: 4px; border-left: 4px solid var(--accent);
+        /* Timestamp Overlay on Photo */
+        .photo-timestamp-overlay {
+            position: absolute;
+            bottom: 90px;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            color: white;
+            padding: 20px;
+            font-size: 0.85rem;
+            z-index: 5;
         }
-        .action-row { display: none; gap: 10px; width: 100%; }
-        .btn-action { flex: 1; padding: 12px; color: white; border-radius: 4px; }
+        
+        .timestamp-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .timestamp-label {
+            opacity: 0.8;
+            font-weight: 500;
+        }
+        
+        .timestamp-value {
+            font-weight: bold;
+            color: var(--accent-light);
+        }
+
+        /* === SUBMISSION CARD === */
+        .submission-card {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--accent);
+        }
+
+        .submission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .submission-type {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .submission-date {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            margin-top: 2px;
+        }
+
+        .submission-detail {
+            margin: 8px 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .submission-detail strong {
+            color: var(--primary);
+        }
+
+        .submission-reason {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #555;
+            font-style: italic;
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 6px;
+            font-family: inherit;
+        }
         
         .hidden { display: none !important; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div id="app">
-
+    <!-- LOGIN VIEW -->
     <section id="view-login" class="view active">
         <div class="login-box">
-            <h1 class="logo-text">GEOPRESEN</h1>
-            <div class="tagline">DEDIKASI TANPA BATAS</div>
-            <input type="text" id="username" placeholder="USERNAME (Test)">
-            <input type="password" id="password" placeholder="PASSWORD (1234)">
-            <button class="btn-login" onclick="handleLogin()">MASUK KERJA</button>
+            <h1 style="color:var(--primary)">GEOPRESEN</h1>
+            <p style="font-size: 0.8rem; letter-spacing: 2px; color: var(--accent); margin-bottom: 20px;">DEDIKASI TANPA BATAS</p>
+            <input type="text" id="username" placeholder="USERNAME">
+            <input type="password" id="password" placeholder="PIN">
+            <button class="btn-main" onclick="handleLogin()">MASUK KERJA</button>
         </div>
     </section>
 
+    <!-- HOME VIEW -->
     <section id="view-home" class="view">
-        <div class="header-slogan" style="margin-top: 2rem;">
-            <h2>SELAMAT DATANG</h2>
-            <p>"Kerja Keras Adalah Kunci Kesuksesan"</p>
+        <div style="background: var(--primary); color: white; padding: 30px 20px; border-radius: 0 0 25px 25px;">
+            <h3>SELAMAT DATANG</h3>
+            <p style="opacity: 0.8; font-size: 0.9rem;">"Kerja Keras Adalah Kunci Kesuksesan"</p>
         </div>
-        <div class="menu-grid">
-            <button class="btn-menu" onclick="navTo('view-profile')"><span>👷 PROFILE</span> ❯</button>
-            <button class="btn-menu" onclick="navTo('view-camera')"><span>📷 AMBIL ABSEN</span> ❯</button>
-            <button class="btn-menu" onclick="handleLogout()" style="background:#e74c3c; color:white; border:none; margin-top:1rem;">
-                <span>🚪 LOGOUT</span>
-            </button>
+        <div class="card" style="margin-top: -20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="font-size: 0.8rem; color: #7f8c8d;">Status Kehadiran</p>
+                    <h4 id="today-status">Belum Absen</h4>
+                </div>
+                <button onclick="navTo('view-camera')" style="background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer;">ABSEN SEKARANG</button>
+            </div>
+        </div>
+        <div class="card">
+            <h4>Ringkasan Bulan Ini</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <div style="background: #eef2f3; padding: 10px; border-radius: 8px;">
+                    <small>Hadir</small><br><b id="summary-hadir">0 Hari</b>
+                </div>
+                <div style="background: #eef2f3; padding: 10px; border-radius: 8px;">
+                    <small>Total Absen</small><br><b id="summary-total">0 Kali</b>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section id="view-profile" class="view">
-        <div class="profile-header-bg">
-             <button onclick="navTo('view-home')" style="margin:15px; background:rgba(0,0,0,0.3); color:white; padding:5px 10px; border-radius:4px;">⬅ KEMBALI</button>
+    <!-- IZIN/PERMISSION VIEW -->
+    <section id="view-perm" class="view">
+        <div style="padding: 20px;">
+            <h3>Pengajuan Form</h3>
+            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Isi form di bawah untuk mengajukan izin</p>
+            <div class="card" style="margin: 15px 0;">
+                <label><strong>Jenis Pengajuan</strong></label>
+                <select id="perm-type">
+                    <option value="Cuti">Cuti Tahunan</option>
+                    <option value="Izin">Izin Keperluan</option>
+                    <option value="Sakit">Sakit</option>
+                    <option value="Lembur">Lembur</option>
+                </select>
+                
+                <label style="margin-top: 10px; display: block;"><strong>Tanggal</strong></label>
+                <input type="date" id="perm-date">
+                
+                <label style="margin-top: 10px; display: block;"><strong>Keterangan/Alasan</strong></label>
+                <textarea rows="4" id="perm-reason" placeholder="Jelaskan alasan pengajuan Anda..."></textarea>
+                
+                <button class="btn-main" onclick="submitPermission()">Kirim Pengajuan</button>
+            </div>
         </div>
-        <div class="profile-content">
+    </section>
+
+    <!-- HISTORY VIEW -->
+    <section id="view-history" class="view">
+        <div style="padding: 20px;">
+            <h3>Riwayat Absensi</h3>
+            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Berdasarkan waktu & koordinat Geo</p>
+            <div id="history-list"></div>
+        </div>
+    </section>
+
+    <!-- SUBMISSIONS VIEW (NEW) -->
+    <section id="view-submissions" class="view">
+        <div style="padding: 20px;">
+            <h3>Daftar Pengajuan</h3>
+            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Semua pengajuan izin yang telah diajukan</p>
+            <div id="submissions-list"></div>
+        </div>
+    </section>
+
+    <!-- PROFILE VIEW -->
+    <section id="view-profile" class="view">
+        <div style="background: var(--primary); height: 120px;"></div>
+        <div style="text-align: center;">
             <div class="profile-pic-box">
                 <img src="https://via.placeholder.com/150" id="prof-img" class="profile-pic">
                 <label class="edit-badge">✎<input type="file" hidden accept="image/*" onchange="updateImg(this)"></label>
             </div>
-            <h2 contenteditable="true" id="prof-name">AGUNG</h2>
-            <p contenteditable="true" id="prof-job" style="color:var(--accent); font-weight:bold;">SUPERVISI LAPANGAN</p>
-            <p id="prof-nip">NIP: 12345678</p>
-            
-            <div style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <h4 style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">DATA PEGAWAI</h4>
-                <p>Status: <b style="color:green">Aktif</b></p>
-                <p>Wilayah: Lapangan Pusat</p>
-            </div>
+            <h3 id="prof-name" contenteditable="true" style="text-transform: uppercase;">AGUNG RIZKY</h3>
+            <p id="prof-job" contenteditable="true" style="color: var(--accent); font-weight: bold; text-transform: uppercase;">SALES</p>
+            <p id="prof-nip" style="font-size: 0.9rem; color: #7f8c8d;">NIP: 2026012290</p>
+        </div>
+        <div class="card">
+            <h4 style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">DATA PEGAWAI</h4>
+            <p>Status: <b style="color:green">Aktif</b></p>
+            <p>Wilayah: Lapangan Pusat</p>
+            <hr style="margin: 10px 0; opacity: 0.2;">
+            <button class="btn-main" style="background: var(--danger);" onclick="handleLogout()">Logout</button>
         </div>
     </section>
 
+    <!-- CAMERA VIEW -->
     <section id="view-camera" class="view">
-        <video id="camera-video" autoplay playsinline muted></video>
-        <canvas id="canvas" class="hidden"></canvas>
-        <img id="photo-result">
-
-        <div class="camera-ui">
-            <div class="info-card" id="info-panel" style="display:none;">
-                <p id="info-time" style="font-weight:bold; font-size:0.8rem;"></p>
-                <p id="info-loc" style="font-size:0.8rem; color:var(--accent);"></p>
+        <div class="camera-container">
+            <video id="camera-video" autoplay playsinline muted></video>
+            <img id="photo-result" class="hidden">
+            <canvas id="canvas" class="hidden"></canvas>
+            
+            <!-- Swap Camera Button -->
+            <button id="swap-camera-btn" class="swap-camera-btn hidden" onclick="swapCamera()">🔄</button>
+            
+            <!-- Timestamp Overlay (shown after capture) -->
+            <div id="photo-timestamp" class="photo-timestamp-overlay hidden">
+                <div class="timestamp-row">
+                    <span class="timestamp-label">📅 Tanggal</span>
+                    <span class="timestamp-value" id="ts-date"></span>
+                </div>
+                <div class="timestamp-row">
+                    <span class="timestamp-label">⏰ Waktu</span>
+                    <span class="timestamp-value" id="ts-time"></span>
+                </div>
+                <div class="timestamp-row">
+                    <span class="timestamp-label">📍 Lokasi</span>
+                    <span class="timestamp-value" id="ts-coords"></span>
+                </div>
             </div>
-
-            <div class="camera-controls" id="shutter-area">
-                <button class="btn-switch" onclick="switchCamera()">🔄</button>
-                <button class="shutter-hard" onclick="takePhoto()"></button>
-                <div style="width:45px;"></div> </div>
-
-            <div class="action-row" id="action-btns">
-                <button class="btn-action" style="background:#7f8c8d" onclick="resetCamera()">ULANGI</button>
-                <button class="btn-action" style="background:var(--accent)" onclick="sendData()">KIRIM</button>
+            
+            <div class="camera-overlay">
+                <div id="loc-status" style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.8rem;">Mencari Lokasi...</div>
+                <div id="camera-controls">
+                    <button class="shutter" onclick="takePhoto()"></button>
+                    <p>Ketuk untuk Absen</p>
+                </div>
+                <div id="post-capture" class="hidden">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-main" style="background:#7f8c8d" onclick="resetCamera()">Ulangi</button>
+                        <button id="btn-send" class="btn-main" onclick="sendAttendance()">Kirim</button>
+                    </div>
+                </div>
+                <button onclick="stopCamAndBack()" style="margin-top: 15px; color: white; background: none; border: none; text-decoration: underline; cursor: pointer;">Batal</button>
             </div>
-
-            <button onclick="stopCamAndBack()" style="background:none; color:white; text-decoration:underline;">BATAL</button>
         </div>
     </section>
 
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav" id="main-nav">
+        <div class="nav-item active" onclick="navTo('view-home')"><i>🏠</i>Home</div>
+        <div class="nav-item" onclick="navTo('view-perm')"><i>📝</i>Izin</div>
+        <div class="nav-item" onclick="navTo('view-history')"><i>📅</i>Riwayat</div>
+        <div class="nav-item" onclick="navTo('view-submissions')"><i>📋</i>Pengajuan</div>
+        <div class="nav-item" onclick="navTo('view-profile')"><i>👤</i>Profil</div>
+    </nav>
 </div>
 
 <script>
+    const OFFICE_COORDS = { lat: -6.2697, lng: 106.9734 }; 
+    const RADIUS_LIMIT = 5000; 
     let currentStream = null;
-    let currentFacingMode = "environment"; // Default kamera belakang
+    let lastCoords = { lat: 0, lng: 0 };
+    let currentFacingMode = 'user'; // 'user' = depan, 'environment' = belakang
+    let capturedData = null; // Menyimpan data sementara saat foto diambil
 
+    // ============================================
+    // NAVIGATION SYSTEM
+    // ============================================
     function navTo(viewId) {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
-        if(viewId === 'view-camera') startCamera(); else stopCamera();
+        
+        if(viewId === 'view-camera') {
+            document.getElementById('main-nav').style.display = 'none';
+            startCamera();
+        } else {
+            document.getElementById('main-nav').style.display = 'flex';
+            stopCamera();
+        }
+
+        const navMap = {
+            'view-home': 0, 
+            'view-perm': 1, 
+            'view-history': 2, 
+            'view-submissions': 3,
+            'view-profile': 4
+        };
+        
+        if(navMap[viewId] !== undefined) {
+            document.querySelectorAll('.nav-item')[navMap[viewId]].classList.add('active');
+        }
+        
+        // Load data saat masuk ke view tertentu
+        if(viewId === 'view-history') renderHistory();
+        if(viewId === 'view-submissions') renderSubmissions();
+        if(viewId === 'view-home') updateHomeSummary();
     }
 
+    // ============================================
+    // LOGIN & LOGOUT
+    // ============================================
     function handleLogin() {
-        if(document.getElementById('username').value === "Test" && document.getElementById('password').value === "1234") {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if(username === "Test" && password === "1234") {
             navTo('view-home');
-        } else alert("Salah!");
+        } else {
+            alert("Login gagal!\nUsername: Test\nPIN: 1234");
+        }
     }
 
     function handleLogout() {
-        if(confirm("Logout?")) navTo('view-login');
-    }
-
-    // --- KAMERA LOGIC ---
-    async function startCamera() {
-        stopCamera();
-        const video = document.getElementById('camera-video');
-        try {
-            currentStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: currentFacingMode } 
-            });
-            video.srcObject = currentStream;
-        } catch (err) {
-            alert("Kamera Error: " + err);
-            navTo('view-home');
+        if(confirm("Yakin ingin logout?")) {
+            location.reload();
         }
     }
 
-    function stopCamera() {
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
-        }
-    }
-
-    function switchCamera() {
-        currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-        startCamera();
-    }
-
-    function takePhoto() {
-        const video = document.getElementById('camera-video');
-        const canvas = document.getElementById('canvas');
-        const result = document.getElementById('photo-result');
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        
-        result.src = canvas.toDataURL('image/png');
-        result.style.display = 'block';
-        video.style.display = 'none';
-        
-        document.getElementById('shutter-area').classList.add('hidden');
-        document.getElementById('info-panel').style.display = 'block';
-        document.getElementById('action-btns').style.display = 'flex';
-        
-        getMetadata();
-        stopCamera();
-    }
-
-    function resetCamera() {
-        document.getElementById('photo-result').style.display = 'none';
-        document.getElementById('camera-video').style.display = 'block';
-        document.getElementById('shutter-area').classList.remove('hidden');
-        document.getElementById('info-panel').style.display = 'none';
-        document.getElementById('action-btns').style.display = 'none';
-        startCamera();
-    }
-
-    function stopCamAndBack() {
-        stopCamera();
-        navTo('view-home');
-    }
-
-    function getMetadata() {
-        const now = new Date();
-        document.getElementById('info-time').innerText = "WAKTU: " + now.toLocaleString('id-ID');
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                document.getElementById('info-loc').innerText = `LOKASI: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-            });
-        }
-    }
-
-    function sendData() {
-        alert("Absen Terkirim!");
-        resetCamera();
-        navTo('view-home');
-    }
-
+    // ============================================
+    // PROFILE IMAGE UPDATE
+    // ============================================
     function updateImg(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -351,6 +550,362 @@
             reader.readAsDataURL(input.files[0]);
         }
     }
+
+    // ============================================
+    // CAMERA FUNCTIONS
+    // ============================================
+    async function startCamera() {
+        try {
+            stopCamera(); // Stop existing stream jika ada
+            
+            currentStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: currentFacingMode } 
+            });
+            
+            document.getElementById('camera-video').srcObject = currentStream;
+            document.getElementById('swap-camera-btn').classList.remove('hidden');
+            checkLocation();
+        } catch (err) {
+            alert("Kamera Error: " + err.message);
+            navTo('view-home');
+        }
+    }
+
+    function stopCamera() {
+        if(currentStream) {
+            currentStream.getTracks().forEach(t => t.stop());
+            currentStream = null;
+        }
+    }
+
+    async function swapCamera() {
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        await startCamera();
+    }
+
+    function checkLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                lastCoords.lat = pos.coords.latitude;
+                lastCoords.lng = pos.coords.longitude;
+                
+                const dist = calculateDistance(
+                    lastCoords.lat, 
+                    lastCoords.lng, 
+                    OFFICE_COORDS.lat, 
+                    OFFICE_COORDS.lng
+                );
+                
+                const statusEl = document.getElementById('loc-status');
+                
+                if(dist <= RADIUS_LIMIT) {
+                    statusEl.innerHTML = `<span style="color:#2ecc71">● Dalam Radius (${(dist/1000).toFixed(2)}km)</span>`;
+                } else {
+                    statusEl.innerHTML = `<span style="color:#e74c3c">● Luar Radius (${(dist/1000).toFixed(2)}km)</span>`;
+                }
+            }, () => { 
+                document.getElementById('loc-status').innerText = "GPS Error - Tidak dapat mengakses lokasi."; 
+            });
+        } else {
+            document.getElementById('loc-status').innerText = "GPS tidak didukung di browser ini.";
+        }
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Radius bumi dalam meter
+        const dLat = (lat2-lat1) * Math.PI/180;
+        const dLon = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                  Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * 
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    function takePhoto() {
+        const video = document.getElementById('camera-video');
+        const canvas = document.getElementById('canvas');
+        const photo = document.getElementById('photo-result');
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        photo.src = canvas.toDataURL('image/jpeg');
+        photo.classList.remove('hidden');
+        video.classList.add('hidden');
+        
+        document.getElementById('camera-controls').classList.add('hidden');
+        document.getElementById('post-capture').classList.remove('hidden');
+        document.getElementById('swap-camera-btn').classList.add('hidden');
+        
+        populateTimestamp();
+    }
+
+    function populateTimestamp() {
+        const now = new Date();
+        
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        
+        const dayName = days[now.getDay()];
+        const day = now.getDate();
+        const month = months[now.getMonth()];
+        const year = now.getFullYear();
+        const dateStr = `${dayName}, ${day} ${month} ${year}`;
+        
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        const timeStr = `${hours}:${minutes}:${seconds} WIB`;
+        
+        const coordsStr = `${lastCoords.lat.toFixed(6)}, ${lastCoords.lng.toFixed(6)}`;
+        
+        document.getElementById('ts-date').innerText = dateStr;
+        document.getElementById('ts-time').innerText = timeStr;
+        document.getElementById('ts-coords').innerText = coordsStr;
+        document.getElementById('photo-timestamp').classList.remove('hidden');
+        
+        capturedData = {
+            date: dateStr,
+            time: timeStr,
+            coords: coordsStr,
+            lat: lastCoords.lat,
+            lng: lastCoords.lng,
+            timestamp: now.getTime()
+        };
+    }
+
+    function resetCamera() {
+        document.getElementById('photo-result').classList.add('hidden');
+        document.getElementById('camera-video').classList.remove('hidden');
+        document.getElementById('camera-controls').classList.remove('hidden');
+        document.getElementById('post-capture').classList.add('hidden');
+        document.getElementById('photo-timestamp').classList.add('hidden');
+        document.getElementById('swap-camera-btn').classList.remove('hidden');
+        capturedData = null;
+    }
+
+    function stopCamAndBack() { 
+        stopCamera(); 
+        navTo('view-home'); 
+    }
+
+    function sendAttendance() {
+        if(!capturedData) {
+            alert("Tidak ada data untuk dikirim!");
+            return;
+        }
+        
+        let logs = JSON.parse(localStorage.getItem('absensi') || '[]');
+        
+        logs.unshift({ 
+            date: capturedData.date,
+            time: capturedData.time.replace(' WIB', ''),
+            status: 'Hadir',
+            lat: capturedData.lat.toFixed(6),
+            lng: capturedData.lng.toFixed(6),
+            timestamp: capturedData.timestamp
+        });
+        
+        if(logs.length > 50) logs = logs.slice(0, 50);
+        localStorage.setItem('absensi', JSON.stringify(logs));
+        
+        const shortTime = capturedData.time.split(' ')[0];
+        document.getElementById('today-status').innerText = `Sudah Absen (${shortTime})`;
+        
+        alert("✓ Absensi berhasil dikirim!");
+        capturedData = null;
+        navTo('view-home');
+    }
+
+    // ============================================
+    // ATTENDANCE HISTORY
+    // ============================================
+    function renderHistory() {
+        const container = document.getElementById('history-list');
+        let logs = JSON.parse(localStorage.getItem('absensi') || '[]');
+        
+        if(logs.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>Belum ada riwayat absensi.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = logs.map(log => `
+            <div class="card" style="margin: 10px 0; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <b style="font-size: 0.95rem;">${log.date}</b><br>
+                        <span style="color:var(--accent); font-weight:bold;">⏰ ${log.time} WIB</span>
+                    </div>
+                    <span class="status-badge" style="background:var(--success)">${log.status}</span>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.75rem; color: #7f8c8d; border-top: 1px dashed #eee; padding-top: 8px;">
+                    📍 Koordinat: ${log.lat}, ${log.lng}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function updateHomeSummary() {
+        let logs = JSON.parse(localStorage.getItem('absensi') || '[]');
+        
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        const thisMonthLogs = logs.filter(log => {
+            if(!log.timestamp) return false;
+            const logDate = new Date(log.timestamp);
+            return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
+        });
+        
+        document.getElementById('summary-total').innerText = `${thisMonthLogs.length} Kali`;
+        document.getElementById('summary-hadir').innerText = `${thisMonthLogs.length} Hari`;
+    }
+
+    // ============================================
+    // PERMISSION SUBMISSION
+    // ============================================
+    function submitPermission() {
+        const type = document.getElementById('perm-type').value;
+        const date = document.getElementById('perm-date').value;
+        const reason = document.getElementById('perm-reason').value.trim();
+        
+        if(!date) {
+            alert("❌ Harap pilih tanggal!");
+            return;
+        }
+        
+        if(!reason) {
+            alert("❌ Harap isi keterangan/alasan!");
+            return;
+        }
+        
+        // Ambil data submissions dari localStorage
+        let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+        
+        // Buat object submission baru
+        const now = new Date();
+        const newSubmission = {
+            id: now.getTime(), // unique ID
+            type: type,
+            date: date,
+            reason: reason,
+            submittedAt: now.toLocaleString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            timestamp: now.getTime()
+        };
+        
+        // Tambahkan ke array (yang terbaru di depan)
+        submissions.unshift(newSubmission);
+        
+        // Simpan ke localStorage
+        localStorage.setItem('submissions', JSON.stringify(submissions));
+        
+        // Alert sukses
+        alert(`✓ Pengajuan ${type} berhasil dikirim!\n\nTanggal: ${date}\nKeterangan: ${reason}`);
+        
+        // Reset form
+        document.getElementById('perm-date').value = '';
+        document.getElementById('perm-reason').value = '';
+        
+        // Optional: pindah ke view submissions
+        // navTo('view-submissions');
+    }
+
+    // ============================================
+    // SUBMISSIONS LIST
+    // ============================================
+    function renderSubmissions() {
+        const container = document.getElementById('submissions-list');
+        let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+        
+        if(submissions.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p>Belum ada pengajuan yang diajukan.</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px;">Silakan ajukan izin di menu <strong>Izin</strong></p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = submissions.map(sub => {
+            // Tentukan warna badge berdasarkan jenis
+            let badgeColor = '';
+            switch(sub.type) {
+                case 'Cuti': badgeColor = 'var(--info)'; break;
+                case 'Izin': badgeColor = 'var(--warning)'; break;
+                case 'Sakit': badgeColor = 'var(--danger)'; break;
+                case 'Lembur': badgeColor = 'var(--success)'; break;
+                default: badgeColor = 'var(--accent)';
+            }
+            
+            return `
+                <div class="submission-card">
+                    <div class="submission-header">
+                        <div>
+                            <div class="submission-type">${sub.type}</div>
+                            <div class="submission-date">Diajukan: ${sub.submittedAt}</div>
+                        </div>
+                        <span class="status-badge" style="background:${badgeColor}">Pending</span>
+                    </div>
+                    
+                    <div class="submission-detail">
+                        <strong>📅 Tanggal:</strong> ${formatDateIndo(sub.date)}
+                    </div>
+                    
+                    <div class="submission-reason">
+                        💬 "${sub.reason}"
+                    </div>
+                    
+                    <button class="delete-btn" onclick="deleteSubmission(${sub.id})">🗑️ Hapus</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function deleteSubmission(id) {
+        if(!confirm("Yakin ingin menghapus pengajuan ini?")) return;
+        
+        let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+        submissions = submissions.filter(sub => sub.id !== id);
+        localStorage.setItem('submissions', JSON.stringify(submissions));
+        
+        renderSubmissions();
+        alert("✓ Pengajuan berhasil dihapus!");
+    }
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    function formatDateIndo(dateStr) {
+        // Convert YYYY-MM-DD to readable Indonesian format
+        const date = new Date(dateStr + 'T00:00:00');
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        
+        return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    window.addEventListener('load', function() {
+        updateHomeSummary();
+    });
 </script>
 </body>
 </html>
