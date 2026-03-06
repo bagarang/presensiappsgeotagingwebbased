@@ -344,8 +344,12 @@
                 <div>
                     <p style="font-size: 0.8rem; color: #7f8c8d;">Status Kehadiran</p>
                     <h4 id="today-status">Belum Absen</h4>
+                    <p id="checkout-status" style="font-size:0.78rem; color:#7f8c8d; margin-top:3px; display:none;"></p>
                 </div>
-                <button onclick="navTo('view-camera')" style="background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer;">ABSEN SEKARANG</button>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                    <button id="btn-checkin" onclick="openCameraMode('masuk')" style="background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size:0.8rem; font-weight:bold;">ABSEN MASUK</button>
+                    <button id="btn-checkout" onclick="openCameraMode('keluar')" style="background: var(--success); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size:0.8rem; font-weight:bold; display:none;">ABSEN KELUAR</button>
+                </div>
             </div>
         </div>
         <div class="card">
@@ -452,6 +456,7 @@
             </div>
             
             <div class="camera-overlay">
+                <div id="camera-mode-label" style="background: rgba(231,76,60,0.85); padding: 6px 14px; border-radius: 20px; margin-bottom: 8px; font-size: 0.8rem; font-weight:bold; display:inline-block;">📥 ABSEN MASUK</div>
                 <div id="loc-status" style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.8rem;">Mencari Lokasi...</div>
                 <div id="camera-controls">
                     <button class="shutter" onclick="takePhoto()"></button>
@@ -481,6 +486,7 @@
 <script>
     const OFFICE_COORDS = { lat: -6.2697, lng: 106.9734 }; 
     const RADIUS_LIMIT = 5000; 
+    let attendanceMode = 'masuk'; // 'masuk' atau 'keluar'
     let currentStream = null;
     let lastCoords = { lat: 0, lng: 0 };
     let currentFacingMode = 'user'; // 'user' = depan, 'environment' = belakang
@@ -690,6 +696,19 @@
         navTo('view-home'); 
     }
 
+    function openCameraMode(mode) {
+        attendanceMode = mode;
+        const label = document.getElementById('camera-mode-label');
+        if(mode === 'masuk') {
+            label.innerHTML = '📥 ABSEN MASUK';
+            label.style.background = 'rgba(231,76,60,0.85)';
+        } else {
+            label.innerHTML = '📤 ABSEN KELUAR';
+            label.style.background = 'rgba(39,174,96,0.85)';
+        }
+        navTo('view-camera');
+    }
+
     function sendAttendance() {
         if(!capturedData) {
             alert("Tidak ada data untuk dikirim!");
@@ -697,23 +716,61 @@
         }
         
         let logs = JSON.parse(localStorage.getItem('absensi') || '[]');
-        
-        logs.unshift({ 
-            date: capturedData.date,
-            time: capturedData.time.replace(' WIB', ''),
-            status: 'Hadir',
-            lat: capturedData.lat.toFixed(6),
-            lng: capturedData.lng.toFixed(6),
-            timestamp: capturedData.timestamp
-        });
+        const shortTime = capturedData.time.split(' ')[0];
+        const todayStr = capturedData.date;
+
+        if(attendanceMode === 'masuk') {
+            logs.unshift({ 
+                date: todayStr,
+                time: capturedData.time.replace(' WIB', ''),
+                timeKeluar: null,
+                status: 'Hadir',
+                lat: capturedData.lat.toFixed(6),
+                lng: capturedData.lng.toFixed(6),
+                timestamp: capturedData.timestamp
+            });
+
+            document.getElementById('today-status').innerText = `Sudah Masuk (${shortTime})`;
+            document.getElementById('btn-checkin').style.display = 'none';
+            document.getElementById('btn-checkout').style.display = 'block';
+            document.getElementById('checkout-status').style.display = 'none';
+
+            alert("✓ Absen Masuk berhasil dicatat!");
+
+        } else {
+            // Cari log masuk hari ini yang belum ada jam keluarnya
+            const todayLog = logs.find(l => l.date === todayStr && !l.timeKeluar);
+            if(todayLog) {
+                todayLog.timeKeluar = capturedData.time.replace(' WIB', '');
+                todayLog.latKeluar = capturedData.lat.toFixed(6);
+                todayLog.lngKeluar = capturedData.lng.toFixed(6);
+                todayLog.timestampKeluar = capturedData.timestamp;
+            } else {
+                // Jika tidak ada log masuk, simpan sebagai keluar saja
+                logs.unshift({
+                    date: todayStr,
+                    time: null,
+                    timeKeluar: capturedData.time.replace(' WIB', ''),
+                    status: 'Keluar',
+                    lat: capturedData.lat.toFixed(6),
+                    lng: capturedData.lng.toFixed(6),
+                    latKeluar: capturedData.lat.toFixed(6),
+                    lngKeluar: capturedData.lng.toFixed(6),
+                    timestamp: capturedData.timestamp,
+                    timestampKeluar: capturedData.timestamp
+                });
+            }
+
+            document.getElementById('checkout-status').innerText = `Sudah Keluar (${shortTime})`;
+            document.getElementById('checkout-status').style.display = 'block';
+            document.getElementById('btn-checkout').style.display = 'none';
+
+            alert("✓ Absen Keluar berhasil dicatat!");
+        }
         
         if(logs.length > 50) logs = logs.slice(0, 50);
         localStorage.setItem('absensi', JSON.stringify(logs));
         
-        const shortTime = capturedData.time.split(' ')[0];
-        document.getElementById('today-status').innerText = `Sudah Absen (${shortTime})`;
-        
-        alert("✓ Absensi berhasil dikirim!");
         capturedData = null;
         navTo('view-home');
     }
@@ -740,12 +797,14 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <b style="font-size: 0.95rem;">${log.date}</b><br>
-                        <span style="color:var(--accent); font-weight:bold;">⏰ ${log.time} WIB</span>
+                        <span style="color:var(--accent); font-weight:bold;">📥 Masuk: ${log.time ? log.time + ' WIB' : '<span style="color:#bbb">-</span>'}</span><br>
+                        <span style="color:var(--success); font-weight:bold;">📤 Keluar: ${log.timeKeluar ? log.timeKeluar + ' WIB' : '<span style="color:#bbb; font-weight:normal;">Belum keluar</span>'}</span>
                     </div>
-                    <span class="status-badge" style="background:var(--success)">${log.status}</span>
+                    <span class="status-badge" style="background:${log.timeKeluar ? 'var(--success)' : 'var(--warning)'}">${log.timeKeluar ? 'Lengkap' : log.status}</span>
                 </div>
                 <div style="margin-top: 8px; font-size: 0.75rem; color: #7f8c8d; border-top: 1px dashed #eee; padding-top: 8px;">
-                    📍 Koordinat: ${log.lat}, ${log.lng}
+                    📍 Masuk: ${log.lat}, ${log.lng}
+                    ${log.timeKeluar ? `<br>📍 Keluar: ${log.latKeluar || log.lat}, ${log.lngKeluar || log.lng}` : ''}
                 </div>
             </div>
         `).join('');
@@ -766,6 +825,37 @@
         
         document.getElementById('summary-total').innerText = `${thisMonthLogs.length} Kali`;
         document.getElementById('summary-hadir').innerText = `${thisMonthLogs.length} Hari`;
+
+        // Restore button & status berdasarkan log hari ini
+        const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        const todayStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+        const todayLog = logs.find(l => l.date === todayStr);
+
+        const btnCheckin = document.getElementById('btn-checkin');
+        const btnCheckout = document.getElementById('btn-checkout');
+        const checkoutStatus = document.getElementById('checkout-status');
+        const todayStatus = document.getElementById('today-status');
+
+        if(todayLog) {
+            if(todayLog.time) {
+                todayStatus.innerText = `Sudah Masuk (${todayLog.time.split(' ')[0]})`;
+                btnCheckin.style.display = 'none';
+            }
+            if(todayLog.timeKeluar) {
+                checkoutStatus.innerText = `Sudah Keluar (${todayLog.timeKeluar.split(' ')[0]})`;
+                checkoutStatus.style.display = 'block';
+                btnCheckout.style.display = 'none';
+            } else if(todayLog.time) {
+                btnCheckout.style.display = 'block';
+            }
+        } else {
+            todayStatus.innerText = 'Belum Absen';
+            btnCheckin.style.display = 'block';
+            btnCheckout.style.display = 'none';
+            checkoutStatus.style.display = 'none';
+        }
     }
 
     // ============================================
