@@ -224,7 +224,7 @@
             <h3>SELAMAT DATANG</h3>
             <p style="opacity: 0.8; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin-top: 5px;">
                 <img id="home-prof-img" src="https://via.placeholder.com/40" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
-                <span id="home-prof-name" style="font-weight: bold;">Karyawan</span>
+                <span id="home-prof-name" style="font-weight: bold;">Memuat...</span>
             </p>
         </div>
         <div class="card" style="margin-top: -20px;">
@@ -234,7 +234,7 @@
                     <h4 id="today-status">Belum Absen</h4>
                     <p id="checkout-status" style="font-size:0.78rem; color:#7f8c8d; margin-top:3px; display:none;"></p>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;" id="action-buttons-container">
                     <button id="btn-checkin" onclick="openCameraMode('masuk')" style="background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size:0.8rem; font-weight:bold;">ABSEN MASUK</button>
                     <button id="btn-checkout" onclick="openCameraMode('keluar')" style="background: var(--success); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size:0.8rem; font-weight:bold; display:none;">ABSEN KELUAR</button>
                 </div>
@@ -277,7 +277,7 @@
     <section id="view-history" class="view">
         <div style="padding: 20px;">
             <h3>Riwayat Absensi</h3>
-            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Berdasarkan waktu & koordinat Geo</p>
+            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Data presensi milik Anda</p>
             <div id="history-list"></div>
         </div>
     </section>
@@ -285,7 +285,7 @@
     <section id="view-submissions" class="view">
         <div style="padding: 20px;">
             <h3>Daftar Pengajuan</h3>
-            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Semua pengajuan izin yang telah diajukan</p>
+            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Semua pengajuan yang telah Anda buat</p>
             <div id="submissions-list"></div>
         </div>
     </section>
@@ -295,12 +295,12 @@
         <div style="text-align: center;">
             <div class="profile-pic-box">
                 <img src="https://via.placeholder.com/150" id="prof-img" class="profile-pic">
-                <label class="edit-badge">✎<input type="file" hidden accept="image/*" onchange="updateImg(this)"></label>
+                <label class="edit-badge" id="btn-edit-foto">✎<input type="file" hidden accept="image/*" onchange="updateImg(this)"></label>
             </div>
-            <h3 id="prof-name" class="editable-field" contenteditable="true" style="text-transform: uppercase;">REZA ALHASNY</h3>
-            <p id="prof-job" class="editable-field" contenteditable="true" style="color: var(--accent); font-weight: bold; text-transform: uppercase;">IT SUPPORT</p>
-            <p style="font-size: 0.9rem; color: #7f8c8d; margin-top:5px;">NIP: <span id="prof-nip" class="editable-field" contenteditable="true">10015502</span></p>
-            <button onclick="saveProfileData()" style="background: #ecf0f1; border: none; padding: 5px 15px; border-radius: 20px; font-size: 0.75rem; margin-top: 10px; cursor: pointer; color: #2c3e50; font-weight: bold;">Simpan Perubahan Profil</button>
+            <h3 id="prof-name" class="editable-field" contenteditable="true" style="text-transform: uppercase;">MEMUAT...</h3>
+            <p id="prof-job" class="editable-field" contenteditable="true" style="color: var(--accent); font-weight: bold; text-transform: uppercase;">MEMUAT...</p>
+            <p style="font-size: 0.9rem; color: #7f8c8d; margin-top:5px;">NIP: <span id="prof-nip" class="editable-field" contenteditable="true">-</span></p>
+            <button id="btn-save-profile" onclick="saveProfileData()" style="background: #ecf0f1; border: none; padding: 5px 15px; border-radius: 20px; font-size: 0.75rem; margin-top: 10px; cursor: pointer; color: #2c3e50; font-weight: bold;">Simpan Perubahan Profil</button>
         </div>
         
         <div class="card">
@@ -313,11 +313,10 @@
 
         <div id="hr-panel" class="card hidden" style="border-left: 4px solid var(--info); background: #f0f8ff;">
             <h4 style="color: var(--info); margin-bottom: 5px;">🛠️ PANEL ADMIN HRD</h4>
-            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 15px;">Tarik rekap data dari perangkat ini.</p>
-            <button class="btn-main" style="background: var(--info); margin-bottom: 8px; font-size: 0.8rem; padding: 10px;" onclick="downloadData('absensi')">📥 Ekspor Data Absensi (CSV)</button>
-            <button class="btn-main" style="background: var(--warning); font-size: 0.8rem; padding: 10px;" onclick="downloadData('izin')">📥 Ekspor Data Izin (CSV)</button>
+            <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 15px;">Tarik MASTER DATA dari seluruh Karyawan.</p>
+            <button class="btn-main" style="background: var(--info); margin-bottom: 8px; font-size: 0.8rem; padding: 10px;" onclick="downloadData('absensi')">📥 Ekspor SEMUA Absensi (CSV)</button>
+            <button class="btn-main" style="background: var(--warning); font-size: 0.8rem; padding: 10px;" onclick="downloadData('izin')">📥 Ekspor SEMUA Izin (CSV)</button>
         </div>
-
     </section>
 
     <section id="view-camera" class="view">
@@ -370,9 +369,9 @@
     let capturedData = null; 
 
     // ============================================
-    // AUTHENTICATION & ROLE LOGIC
+    // SESSION & AUTH LOGIC (ISOLATED DATA)
     // ============================================
-    let authMode = 'login'; // 'login' or 'register'
+    let authMode = 'login'; 
 
     window.addEventListener('load', function() { initAuth(); });
 
@@ -396,9 +395,14 @@
         }
     }
 
+    function getSession() {
+        const sessionStr = localStorage.getItem('geo_session');
+        return sessionStr ? JSON.parse(sessionStr) : null;
+    }
+
     function initAuth() {
-        const activeSessionRole = localStorage.getItem('geo_session'); 
-        if(activeSessionRole) {
+        const session = getSession(); 
+        if(session) {
             loadProfileData();
             navTo('view-home');
         } else {
@@ -414,7 +418,15 @@
 
         // --- BYPASS LOGIN HRD ---
         if(authMode === 'login' && username === "HRD 01" && pin === "1234") {
-            localStorage.setItem('geo_session', 'hr');
+            const hrSession = { role: 'hr', username: 'HRD 01' };
+            localStorage.setItem('geo_session', JSON.stringify(hrSession));
+            
+            // Cek apakah profil HRD sudah ada, jika belum buat default
+            if(!localStorage.getItem('geo_profile_HRD 01')) {
+                const hrdProf = { name: 'ADMINISTRATOR HRD', job: 'HUMAN RESOURCES', nip: '-', imgBase64: 'https://via.placeholder.com/150/1a252f/FFFFFF?text=HR' };
+                localStorage.setItem('geo_profile_HRD 01', JSON.stringify(hrdProf));
+            }
+            
             loadProfileData();
             navTo('view-home');
             alert("Berhasil login sebagai Admin HRD.");
@@ -422,22 +434,29 @@
         }
 
         if(authMode === 'register') {
+            // Cek apakah username sudah dipakai
+            const existingAccount = localStorage.getItem('geo_acc_' + username);
+            if(existingAccount) {
+                alert("Username ini sudah terdaftar di perangkat ini! Silakan ke tab LOGIN.");
+                return;
+            }
+
             // REGISTRASI KARYAWAN
-            localStorage.setItem('geo_account', JSON.stringify({ username, pin }));
-            localStorage.setItem('geo_session', 'user');
+            localStorage.setItem('geo_acc_' + username, JSON.stringify({ username, pin }));
+            localStorage.setItem('geo_session', JSON.stringify({ role: 'user', username: username }));
             initDefaultProfile(username);
-            alert("Akun Karyawan berhasil didaftarkan di perangkat ini!");
+            alert(`Akun ${username} berhasil didaftarkan!`);
             navTo('view-home');
         } else {
             // LOGIN KARYAWAN
-            const localAccountStr = localStorage.getItem('geo_account');
+            const localAccountStr = localStorage.getItem('geo_acc_' + username);
             if(!localAccountStr) {
-                alert("Belum ada akun yang terdaftar di perangkat ini. Silakan pindah ke tab DAFTAR.");
+                alert("Akun tidak ditemukan. Silakan pindah ke tab DAFTAR untuk membuat akun.");
                 return;
             }
             const account = JSON.parse(localAccountStr);
             if(username === account.username && pin === account.pin) {
-                localStorage.setItem('geo_session', 'user');
+                localStorage.setItem('geo_session', JSON.stringify({ role: 'user', username: username }));
                 loadProfileData();
                 navTo('view-home');
             } else {
@@ -454,47 +473,60 @@
     }
 
     // ============================================
-    // PROFILE PERSISTENCE & UI RENDERING
+    // ISOLATED PROFILE PERSISTENCE
     // ============================================
     function initDefaultProfile(username) {
-        const defaultProf = { name: username.toUpperCase(), job: 'STAFF', nip: '10015502', imgBase64: 'https://via.placeholder.com/150' };
-        localStorage.setItem('geo_profile', JSON.stringify(defaultProf));
+        // Profil standar saat Karyawan baru daftar
+        const defaultProf = { 
+            name: "REZA ALHASNY", 
+            job: 'IT SUPPORT', 
+            nip: '10015502', 
+            imgBase64: 'https://via.placeholder.com/150' 
+        };
+        localStorage.setItem('geo_profile_' + username, JSON.stringify(defaultProf));
         loadProfileData();
     }
 
     function loadProfileData() {
-        const prof = JSON.parse(localStorage.getItem('geo_profile') || '{}');
-        const sessionRole = localStorage.getItem('geo_session');
+        const session = getSession();
+        if(!session) return;
 
-        if(prof.name) {
-            document.getElementById('prof-name').innerText = prof.name;
-            document.getElementById('prof-job').innerText = prof.job;
-            document.getElementById('prof-nip').innerText = prof.nip;
-            document.getElementById('prof-img').src = prof.imgBase64;
-            
-            // Beri label khusus jika masuk sebagai HRD
-            document.getElementById('home-prof-name').innerText = sessionRole === 'hr' ? 'ADMIN HRD' : prof.name;
-            document.getElementById('home-prof-img').src = prof.imgBase64;
-        }
+        // Ambil profil khusus milik username yang sedang login
+        const profStr = localStorage.getItem('geo_profile_' + session.username);
+        const prof = profStr ? JSON.parse(profStr) : { name: session.username, job: 'STAFF', nip: '-', imgBase64: 'https://via.placeholder.com/150' };
 
-        // Tampilkan/Sembunyikan Panel Export Data
+        document.getElementById('prof-name').innerText = prof.name;
+        document.getElementById('prof-job').innerText = prof.job;
+        document.getElementById('prof-nip').innerText = prof.nip;
+        document.getElementById('prof-img').src = prof.imgBase64;
+        
+        document.getElementById('home-prof-name').innerText = session.role === 'hr' ? 'ADMIN HRD' : prof.name;
+        document.getElementById('home-prof-img').src = prof.imgBase64;
+
+        // Tampilkan/Sembunyikan Panel Export Data HRD
         const hrPanel = document.getElementById('hr-panel');
-        if(sessionRole === 'hr') {
+        if(session.role === 'hr') {
             hrPanel.classList.remove('hidden');
+            document.getElementById('action-buttons-container').style.display = 'none'; // Sembunyikan tombol absen untuk HRD
         } else {
             hrPanel.classList.add('hidden');
+            document.getElementById('action-buttons-container').style.display = 'flex'; // Munculkan tombol absen untuk karyawan
         }
 
         updateHomeSummary();
     }
 
     function saveProfileData() {
+        const session = getSession();
+        if(!session) return;
+
         const name = document.getElementById('prof-name').innerText;
         const job = document.getElementById('prof-job').innerText;
         const nip = document.getElementById('prof-nip').innerText;
         const imgBase64 = document.getElementById('prof-img').src;
 
-        localStorage.setItem('geo_profile', JSON.stringify({ name, job, nip, imgBase64 }));
+        // Simpan ke kunci unik milik user tersebut
+        localStorage.setItem('geo_profile_' + session.username, JSON.stringify({ name, job, nip, imgBase64 }));
         loadProfileData(); 
         alert("✓ Profil berhasil disimpan ke perangkat!");
     }
@@ -504,14 +536,14 @@
             const reader = new FileReader();
             reader.onload = e => {
                 document.getElementById('prof-img').src = e.target.result;
-                saveProfileData();
+                saveProfileData(); // Auto save
             };
             reader.readAsDataURL(input.files[0]);
         }
     }
 
     // ============================================
-    // DATA EXPORT LOGIC (JSON to CSV for Excel)
+    // DATA EXPORT LOGIC (Master File)
     // ============================================
     function downloadData(type) {
         let data = [];
@@ -521,24 +553,26 @@
             data = JSON.parse(localStorage.getItem('absensi') || '[]');
             if(data.length === 0) { alert("Data Absensi masih kosong."); return; }
             
-            csvContent += "Nama Pegawai,NIP,Tanggal,Jam Masuk,Jam Keluar,Status Kehadiran,Lat Masuk,Lng Masuk,Lat Keluar,Lng Keluar\n";
+            csvContent += "Username Akun,Nama Pegawai,NIP,Tanggal,Jam Masuk,Jam Keluar,Status Kehadiran,Lat Masuk,Lng Masuk,Lat Keluar,Lng Keluar\n";
             data.forEach(row => {
-                const nama = row.nama || "Tanpa Nama";
+                const usr = row.username || "-";
+                const nama = row.nama || "-";
                 const nip = row.nip || "-";
                 const timeIn = row.time ? row.time : "-";
                 const timeOut = row.timeKeluar ? row.timeKeluar : "-";
-                csvContent += `"${nama}","${nip}","${row.date}","${timeIn}","${timeOut}","${row.status}","${row.lat}","${row.lng}","${row.latKeluar||'-'}","${row.lngKeluar||'-'}"\n`;
+                csvContent += `"${usr}","${nama}","${nip}","${row.date}","${timeIn}","${timeOut}","${row.status}","${row.lat}","${row.lng}","${row.latKeluar||'-'}","${row.lngKeluar||'-'}"\n`;
             });
             
         } else if (type === 'izin') {
             data = JSON.parse(localStorage.getItem('submissions') || '[]');
             if(data.length === 0) { alert("Data Izin/Pengajuan masih kosong."); return; }
             
-            csvContent += "Waktu Pengajuan,Nama Pegawai,NIP,Jenis Pengajuan,Tanggal Izin,Alasan/Keterangan\n";
+            csvContent += "Waktu Pengajuan,Username Akun,Nama Pegawai,NIP,Jenis Pengajuan,Tanggal Izin,Alasan/Keterangan\n";
             data.forEach(row => {
-                const nama = row.nama || "Tanpa Nama";
+                const usr = row.username || "-";
+                const nama = row.nama || "-";
                 const nip = row.nip || "-";
-                csvContent += `"${row.submittedAt}","${nama}","${nip}","${row.type}","${row.date}","${row.reason}"\n`;
+                csvContent += `"${row.submittedAt}","${usr}","${nama}","${nip}","${row.type}","${row.date}","${row.reason}"\n`;
             });
         }
 
@@ -552,20 +586,17 @@
     }
 
     // ============================================
-    // NAVIGATION SYSTEM
+    // CAMERA & ATTENDANCE FUNCTIONS (Tagging Username)
     // ============================================
+    // ... [NavTo, Camera Control, GPS Logic remain exactly the same] ...
+    
     function navTo(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
         
-        if(viewId === 'view-camera') {
-            document.getElementById('main-nav').style.display = 'none';
-            startCamera();
-        } else {
-            document.getElementById('main-nav').style.display = 'flex';
-            stopCamera();
-        }
+        if(viewId === 'view-camera') { document.getElementById('main-nav').style.display = 'none'; startCamera(); } 
+        else { document.getElementById('main-nav').style.display = 'flex'; stopCamera(); }
 
         const navMap = { 'view-home': 0, 'view-perm': 1, 'view-history': 2, 'view-submissions': 3, 'view-profile': 4 };
         if(navMap[viewId] !== undefined) { document.querySelectorAll('.nav-item')[navMap[viewId]].classList.add('active'); }
@@ -575,30 +606,12 @@
         if(viewId === 'view-home') updateHomeSummary();
     }
 
-    // ============================================
-    // CAMERA & ATTENDANCE FUNCTIONS
-    // ============================================
     async function startCamera() {
-        try {
-            stopCamera(); 
-            currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
-            document.getElementById('camera-video').srcObject = currentStream;
-            document.getElementById('swap-camera-btn').classList.remove('hidden');
-            checkLocation();
-        } catch (err) {
-            alert("Kamera Error: " + err.message);
-            navTo('view-home');
-        }
+        try { stopCamera(); currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } }); document.getElementById('camera-video').srcObject = currentStream; document.getElementById('swap-camera-btn').classList.remove('hidden'); checkLocation(); } 
+        catch (err) { alert("Kamera Error: " + err.message); navTo('view-home'); }
     }
-
-    function stopCamera() {
-        if(currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
-    }
-
-    async function swapCamera() {
-        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-        await startCamera();
-    }
+    function stopCamera() { if(currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; } }
+    async function swapCamera() { currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user'; await startCamera(); }
 
     function checkLocation() {
         if (navigator.geolocation) {
@@ -606,28 +619,20 @@
                 lastCoords.lat = pos.coords.latitude; lastCoords.lng = pos.coords.longitude;
                 const dist = calculateDistance(lastCoords.lat, lastCoords.lng, OFFICE_COORDS.lat, OFFICE_COORDS.lng);
                 const statusEl = document.getElementById('loc-status');
-                if(dist <= RADIUS_LIMIT) {
-                    statusEl.innerHTML = `<span style="color:#2ecc71">● Dalam Radius (${(dist/1000).toFixed(2)}km)</span>`;
-                } else {
-                    statusEl.innerHTML = `<span style="color:#e74c3c">● Luar Radius (${(dist/1000).toFixed(2)}km)</span>`;
-                }
+                if(dist <= RADIUS_LIMIT) { statusEl.innerHTML = `<span style="color:#2ecc71">● Dalam Radius (${(dist/1000).toFixed(2)}km)</span>`; } 
+                else { statusEl.innerHTML = `<span style="color:#e74c3c">● Luar Radius (${(dist/1000).toFixed(2)}km)</span>`; }
             }, () => { document.getElementById('loc-status').innerText = "GPS Error - Tidak dapat mengakses lokasi."; });
-        } else {
-            document.getElementById('loc-status').innerText = "GPS tidak didukung di browser ini.";
-        }
+        } else { document.getElementById('loc-status').innerText = "GPS tidak didukung di browser ini."; }
     }
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3; const dLat = (lat2-lat1) * Math.PI/180; const dLon = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2); return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
     function takePhoto() {
         const video = document.getElementById('camera-video'); const canvas = document.getElementById('canvas'); const photo = document.getElementById('photo-result');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0);
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5); 
         photo.src = compressedBase64; photo.classList.remove('hidden'); video.classList.add('hidden');
         document.getElementById('camera-controls').classList.add('hidden'); document.getElementById('post-capture').classList.remove('hidden');
@@ -637,23 +642,19 @@
 
     function populateTimestamp(photoBase64) {
         const now = new Date();
-        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']; const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         const dateStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
         const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')} WIB`;
         const coordsStr = `${lastCoords.lat.toFixed(6)}, ${lastCoords.lng.toFixed(6)}`;
-        
         document.getElementById('ts-date').innerText = dateStr; document.getElementById('ts-time').innerText = timeStr; document.getElementById('ts-coords').innerText = coordsStr;
         document.getElementById('photo-timestamp').classList.remove('hidden');
-        
         capturedData = { date: dateStr, time: timeStr, coords: coordsStr, lat: lastCoords.lat, lng: lastCoords.lng, timestamp: now.getTime(), photo: photoBase64 };
     }
 
     function resetCamera() {
         document.getElementById('photo-result').classList.add('hidden'); document.getElementById('camera-video').classList.remove('hidden');
         document.getElementById('camera-controls').classList.remove('hidden'); document.getElementById('post-capture').classList.add('hidden');
-        document.getElementById('photo-timestamp').classList.add('hidden'); document.getElementById('swap-camera-btn').classList.remove('hidden');
-        capturedData = null;
+        document.getElementById('photo-timestamp').classList.add('hidden'); document.getElementById('swap-camera-btn').classList.remove('hidden'); capturedData = null;
     }
 
     function stopCamAndBack() { stopCamera(); navTo('view-home'); }
@@ -667,30 +668,35 @@
 
     function sendAttendance() {
         if(!capturedData) return;
+        const session = getSession();
+        if(!session) return;
+
         let logs = JSON.parse(localStorage.getItem('absensi') || '[]');
         const todayStr = capturedData.date;
 
         // Ambil data profil karyawan
-        const prof = JSON.parse(localStorage.getItem('geo_profile') || '{}');
-        const empName = prof.name || "Tanpa Nama";
+        const profStr = localStorage.getItem('geo_profile_' + session.username);
+        const prof = profStr ? JSON.parse(profStr) : {};
+        const empName = prof.name || session.username;
         const empNip = prof.nip || "-";
 
         if(attendanceMode === 'masuk') {
             logs.unshift({ 
-                nama: empName, nip: empNip, // Data identitas ditambahkan
+                username: session.username, nama: empName, nip: empNip, // TAGGING DATA
                 date: todayStr, time: capturedData.time.replace(' WIB', ''), timeKeluar: null,
                 status: 'Hadir', lat: capturedData.lat.toFixed(6), lng: capturedData.lng.toFixed(6),
                 timestamp: capturedData.timestamp, photoMasuk: capturedData.photo
             });
             alert("✓ Absen Masuk berhasil dicatat!");
         } else {
-            const todayLog = logs.find(l => l.date === todayStr && !l.timeKeluar);
+            // Cari data absen masuk MILIK USER INI hari ini
+            const todayLog = logs.find(l => l.date === todayStr && !l.timeKeluar && l.username === session.username);
             if(todayLog) {
                 todayLog.timeKeluar = capturedData.time.replace(' WIB', ''); todayLog.latKeluar = capturedData.lat.toFixed(6);
                 todayLog.lngKeluar = capturedData.lng.toFixed(6); todayLog.photoKeluar = capturedData.photo;
             } else {
                 logs.unshift({
-                    nama: empName, nip: empNip, // Data identitas ditambahkan
+                    username: session.username, nama: empName, nip: empNip, // TAGGING DATA
                     date: todayStr, time: null, timeKeluar: capturedData.time.replace(' WIB', ''),
                     status: 'Keluar', lat: capturedData.lat.toFixed(6), lng: capturedData.lng.toFixed(6),
                     latKeluar: capturedData.lat.toFixed(6), lngKeluar: capturedData.lng.toFixed(6),
@@ -700,18 +706,26 @@
             alert("✓ Absen Keluar berhasil dicatat!");
         }
         
-        if(logs.length > 30) logs = logs.slice(0, 30);
+        if(logs.length > 50) logs = logs.slice(0, 50);
         localStorage.setItem('absensi', JSON.stringify(logs)); capturedData = null; navTo('view-home');
     }
 
     // ============================================
-    // RENDERING LOGIC (History & Home)
+    // RENDERING LOGIC (Filtered by Username)
     // ============================================
     function renderHistory() {
-        const container = document.getElementById('history-list'); let logs = JSON.parse(localStorage.getItem('absensi') || '[]');
-        if(logs.length === 0) { container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>Belum ada riwayat absensi.</p></div>`; return; }
+        const session = getSession();
+        if(!session) return;
+
+        const container = document.getElementById('history-list'); 
+        let allLogs = JSON.parse(localStorage.getItem('absensi') || '[]');
         
-        container.innerHTML = logs.map(log => `
+        // FILTER: Hanya ambil data milik user yang sedang login
+        let userLogs = allLogs.filter(log => log.username === session.username);
+
+        if(userLogs.length === 0) { container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>Belum ada riwayat absensi.</p></div>`; return; }
+        
+        container.innerHTML = userLogs.map(log => `
             <div class="card" style="margin: 10px 0; padding: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div style="display: flex; align-items: center;">
@@ -729,14 +743,22 @@
     }
 
     function updateHomeSummary() {
-        let logs = JSON.parse(localStorage.getItem('absensi') || '[]'); const now = new Date();
-        const thisMonthLogs = logs.filter(log => { if(!log.timestamp) return false; const logDate = new Date(log.timestamp); return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear(); });
+        const session = getSession();
+        if(!session) return;
+
+        let allLogs = JSON.parse(localStorage.getItem('absensi') || '[]'); 
+        
+        // FILTER: Hanya hitung dan cek status absen milik user ini
+        let userLogs = allLogs.filter(log => log.username === session.username);
+        
+        const now = new Date();
+        const thisMonthLogs = userLogs.filter(log => { if(!log.timestamp) return false; const logDate = new Date(log.timestamp); return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear(); });
         
         document.getElementById('summary-total').innerText = `${thisMonthLogs.length} Kali`; document.getElementById('summary-hadir').innerText = `${thisMonthLogs.length} Hari`;
         const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']; const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
         const todayStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 
-        const todayLog = logs.find(l => l.date === todayStr);
+        const todayLog = userLogs.find(l => l.date === todayStr);
         const btnCheckin = document.getElementById('btn-checkin'); const btnCheckout = document.getElementById('btn-checkout');
         const checkoutStatus = document.getElementById('checkout-status'); const todayStatus = document.getElementById('today-status');
 
@@ -750,22 +772,26 @@
     }
 
     // ============================================
-    // PERMISSIONS LOGIC
+    // PERMISSIONS LOGIC (Filtered by Username)
     // ============================================
     function submitPermission() {
+        const session = getSession();
+        if(!session) return;
+
         const type = document.getElementById('perm-type').value; const date = document.getElementById('perm-date').value; const reason = document.getElementById('perm-reason').value.trim();
         if(!date || !reason) { alert("❌ Harap isi tanggal dan keterangan!"); return; }
         
         let submissions = JSON.parse(localStorage.getItem('submissions') || '[]'); const now = new Date();
         
         // Ambil data profil karyawan
-        const prof = JSON.parse(localStorage.getItem('geo_profile') || '{}');
-        const empName = prof.name || "Tanpa Nama";
+        const profStr = localStorage.getItem('geo_profile_' + session.username);
+        const prof = profStr ? JSON.parse(profStr) : {};
+        const empName = prof.name || session.username;
         const empNip = prof.nip || "-";
 
         submissions.unshift({ 
             id: now.getTime(), type: type, date: date, reason: reason, 
-            nama: empName, nip: empNip, // Data identitas ditambahkan
+            username: session.username, nama: empName, nip: empNip, // TAGGING DATA
             submittedAt: now.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 
             timestamp: now.getTime() 
         });
@@ -774,10 +800,18 @@
     }
 
     function renderSubmissions() {
-        const container = document.getElementById('submissions-list'); let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
-        if(submissions.length === 0) { container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><p>Belum ada pengajuan.</p></div>`; return; }
+        const session = getSession();
+        if(!session) return;
+
+        const container = document.getElementById('submissions-list'); 
+        let allSubmissions = JSON.parse(localStorage.getItem('submissions') || '[]');
         
-        container.innerHTML = submissions.map(sub => {
+        // FILTER: Hanya ambil izin milik user ini
+        let userSubmissions = allSubmissions.filter(sub => sub.username === session.username);
+
+        if(userSubmissions.length === 0) { container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><p>Belum ada pengajuan.</p></div>`; return; }
+        
+        container.innerHTML = userSubmissions.map(sub => {
             let badgeColor = sub.type === 'Cuti' ? 'var(--info)' : sub.type === 'Sakit' ? 'var(--danger)' : sub.type === 'Lembur' ? 'var(--success)' : 'var(--warning)';
             return `
                 <div class="submission-card">
