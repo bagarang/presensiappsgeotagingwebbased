@@ -107,6 +107,7 @@
             transition: all 0.3s;
         }
         .btn-main:active { transform: scale(0.98); }
+        .btn-main:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
         /* === COMPONENT STYLES === */
         .card {
@@ -117,6 +118,22 @@
             padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; 
             color: white; font-weight: bold;
         }
+
+        /* === LOADER OVERLAY === */
+        #loader-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 9999;
+            justify-content: center; align-items: center; flex-direction: column; gap: 12px;
+        }
+        #loader-overlay.active { display: flex; }
+        .spinner {
+            width: 44px; height: 44px; border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loader-overlay p { color: white; font-size: 0.9rem; }
 
         /* === PROFILE STYLES === */
         .profile-pic-box {
@@ -195,9 +212,30 @@
         .empty-state { text-align: center; padding: 40px 20px; color: #95a5a6; }
         .empty-state-icon { font-size: 3rem; margin-bottom: 10px; }
         .history-img-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; margin-right: 10px; border: 1px solid #eee; }
+
+        /* === TOAST NOTIFICATION === */
+        #toast {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #2c3e50; color: white; padding: 10px 20px; border-radius: 8px;
+            font-size: 0.85rem; opacity: 0; transition: all 0.3s; z-index: 9998;
+            white-space: nowrap; pointer-events: none;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #toast.success { background: var(--success); }
+        #toast.error { background: var(--danger); }
     </style>
 </head>
 <body>
+
+<div id="loader-overlay">
+    <div class="spinner"></div>
+    <p id="loader-text">Memproses...</p>
+</div>
+
+<div id="toast"></div>
 
 <div id="app">
     <section id="view-login" class="view active">
@@ -360,484 +398,747 @@
 </div>
 
 <script>
-    const OFFICE_COORDS = { lat: -6.2697, lng: 106.9734 }; 
-    const RADIUS_LIMIT = 5000; 
-    let attendanceMode = 'masuk'; 
-    let currentStream = null;
-    let lastCoords = { lat: 0, lng: 0 };
-    let currentFacingMode = 'user'; 
-    let capturedData = null; 
+// ============================================================
+// KONFIGURASI
+// ============================================================
+const API           = "http://localhost/geopresen/api";
+const OFFICE_COORDS = { lat: -6.2697, lng: 106.9734 };
+const RADIUS_LIMIT  = 5000; // meter
 
-    // ============================================
-    // SESSION & AUTH LOGIC (ISOLATED DATA)
-    // ============================================
-    let authMode = 'login'; 
+// ============================================================
+// STATE GLOBAL
+// ============================================================
+let attendanceMode   = 'masuk';
+let currentStream    = null;
+let lastCoords       = { lat: 0, lng: 0 };
+let currentFacingMode = 'user';
+let capturedData     = null;
+let authMode         = 'login';
+let currentSession   = null; // { username, role, token? }
 
-    window.addEventListener('load', function() { initAuth(); });
+// ============================================================
+// HELPER: LOADER, TOAST, FETCH
+// ============================================================
+function showLoader(text = 'Memproses...') {
+    document.getElementById('loader-text').innerText = text;
+    document.getElementById('loader-overlay').classList.add('active');
+}
+function hideLoader() {
+    document.getElementById('loader-overlay').classList.remove('active');
+}
 
-    function switchAuthTab(mode) {
-        authMode = mode;
-        const loginTab = document.getElementById('tab-login');
-        const regTab = document.getElementById('tab-register');
-        const helperTxt = document.getElementById('login-helper');
-        const btnAction = document.getElementById('btn-login-action');
+function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.className = 'show ' + type;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.className = ''; }, 3000);
+}
 
-        if(mode === 'login') {
-            loginTab.style.color = 'var(--accent)'; loginTab.style.borderBottom = '2px solid var(--accent)';
-            regTab.style.color = '#7f8c8d'; regTab.style.borderBottom = 'none';
-            helperTxt.innerText = 'Masuk sebagai Karyawan atau HRD.';
-            btnAction.innerText = 'MASUK KERJA';
-        } else {
-            regTab.style.color = 'var(--accent)'; regTab.style.borderBottom = '2px solid var(--accent)';
-            loginTab.style.color = '#7f8c8d'; loginTab.style.borderBottom = 'none';
-            helperTxt.innerText = 'Daftarkan Username dan PIN untuk perangkat ini.';
-            btnAction.innerText = 'DAFTARKAN AKUN';
-        }
+/**
+ * Wrapper fetch ke backend.
+ * SUDAH DIREVISI agar menangkap PHP Error (HTML tag) tanpa memunculkan token '<' error
+ */
+async function apiFetch(endpoint, options = {}) {
+    const url = API + endpoint;
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+
+    if (currentSession) {
+        headers['X-Username'] = currentSession.username;
     }
 
-    function getSession() {
-        const sessionStr = localStorage.getItem('geo_session');
-        return sessionStr ? JSON.parse(sessionStr) : null;
-    }
-
-    function initAuth() {
-        const session = getSession(); 
-        if(session) {
-            loadProfileData();
-            navTo('view-home');
-        } else {
-            switchAuthTab('login');
-        }
-    }
-
-    function handleAuth() {
-        const username = document.getElementById('username').value.trim();
-        const pin = document.getElementById('password').value.trim();
+    try {
+        const res = await fetch(url, { ...options, headers });
         
-        if(!username || !pin) { alert("Username dan PIN harus diisi!"); return; }
+        // BACA SEBAGAI TEXT DULU, BUKAN LANGSUNG JSON
+        const responseText = await res.text();
 
-        // --- BYPASS LOGIN HRD ---
-        if(authMode === 'login' && username === "HRD 01" && pin === "1234") {
-            const hrSession = { role: 'hr', username: 'HRD 01' };
-            localStorage.setItem('geo_session', JSON.stringify(hrSession));
-            
-            // Cek apakah profil HRD sudah ada, jika belum buat default
-            if(!localStorage.getItem('geo_profile_HRD 01')) {
-                const hrdProf = { name: 'ADMINISTRATOR HRD', job: 'HUMAN RESOURCES', nip: '-', imgBase64: 'https://via.placeholder.com/150/1a252f/FFFFFF?text=HR' };
-                localStorage.setItem('geo_profile_HRD 01', JSON.stringify(hrdProf));
-            }
-            
-            loadProfileData();
-            navTo('view-home');
-            alert("Berhasil login sebagai Admin HRD.");
+        // JIKA TEKS MENGANDUNG TAG HTML (BIASANYA PESAN ERROR DARI PHP)
+        if (responseText.includes('<br') || responseText.includes('<b>')) {
+            console.error("PHP Error Tertangkap:", responseText);
+            throw new Error("Sistem Server PHP Error. Cek console atau koneksi Database!");
+        }
+
+        // JIKA BERSIH DARI HTML, UBAH JADI JSON
+        const data = JSON.parse(responseText);
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Gagal menghubungi server HTTP: ' + res.status);
+        }
+
+        return data;
+
+    } catch (err) {
+        // Tampilkan pesan yang ramah agar aplikasi tidak freeze
+        throw new Error(err.message || 'Gagal terhubung ke server. Periksa XAMPP Anda.');
+    }
+}
+
+// ============================================================
+// SESSION (SIMPAN KE localStorage SEBAGAI CACHE LOKAL)
+// ============================================================
+function getSession() {
+    if (currentSession) return currentSession;
+    const raw = localStorage.getItem('geo_session');
+    if (raw) { currentSession = JSON.parse(raw); }
+    return currentSession;
+}
+
+function saveSession(sess) {
+    currentSession = sess;
+    localStorage.setItem('geo_session', JSON.stringify(sess));
+}
+
+function clearSession() {
+    currentSession = null;
+    localStorage.removeItem('geo_session');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', function () {
+    const sess = getSession();
+    if (sess) {
+        loadProfileData();
+        navTo('view-home');
+    } else {
+        switchAuthTab('login');
+    }
+});
+
+// ============================================================
+// AUTH TABS
+// ============================================================
+function switchAuthTab(mode) {
+    authMode = mode;
+    const loginTab  = document.getElementById('tab-login');
+    const regTab    = document.getElementById('tab-register');
+    const helperTxt = document.getElementById('login-helper');
+    const btnAction = document.getElementById('btn-login-action');
+
+    if (mode === 'login') {
+        loginTab.style.color        = 'var(--accent)';
+        loginTab.style.borderBottom = '2px solid var(--accent)';
+        regTab.style.color          = '#7f8c8d';
+        regTab.style.borderBottom   = 'none';
+        helperTxt.innerText = 'Masuk sebagai Karyawan atau HRD.';
+        btnAction.innerText = 'MASUK KERJA';
+    } else {
+        regTab.style.color          = 'var(--accent)';
+        regTab.style.borderBottom   = '2px solid var(--accent)';
+        loginTab.style.color        = '#7f8c8d';
+        loginTab.style.borderBottom = 'none';
+        helperTxt.innerText = 'Daftarkan Username dan PIN untuk akun baru.';
+        btnAction.innerText = 'DAFTARKAN AKUN';
+    }
+}
+
+// ============================================================
+// HANDLE AUTH — LOGIN & REGISTER via API
+// ============================================================
+async function handleAuth() {
+    const username = document.getElementById('username').value.trim();
+    const pin      = document.getElementById('password').value.trim();
+
+    if (!username || !pin) {
+        showToast('Username dan PIN harus diisi!', 'error');
+        return;
+    }
+
+    const endpoint = authMode === 'login' ? '/auth/login.php' : '/auth/register.php';
+
+    showLoader(authMode === 'login' ? 'Sedang login...' : 'Membuat akun...');
+    document.getElementById('btn-login-action').disabled = true;
+
+    try {
+        const data = await apiFetch(endpoint, {
+            method: 'POST',
+            body: JSON.stringify({ username, pin })
+        });
+
+        if (!data.success) {
+            showToast(data.message || 'Gagal', 'error');
             return;
         }
 
-        if(authMode === 'register') {
-            // Cek apakah username sudah dipakai
-            const existingAccount = localStorage.getItem('geo_acc_' + username);
-            if(existingAccount) {
-                alert("Username ini sudah terdaftar di perangkat ini! Silakan ke tab LOGIN.");
-                return;
-            }
+        saveSession(data.session || { username, role: data.role || 'user' });
 
-            // REGISTRASI KARYAWAN
-            localStorage.setItem('geo_acc_' + username, JSON.stringify({ username, pin }));
-            localStorage.setItem('geo_session', JSON.stringify({ role: 'user', username: username }));
-            initDefaultProfile(username);
-            alert(`Akun ${username} berhasil didaftarkan!`);
-            navTo('view-home');
-        } else {
-            // LOGIN KARYAWAN
-            const localAccountStr = localStorage.getItem('geo_acc_' + username);
-            if(!localAccountStr) {
-                alert("Akun tidak ditemukan. Silakan pindah ke tab DAFTAR untuk membuat akun.");
-                return;
-            }
-            const account = JSON.parse(localAccountStr);
-            if(username === account.username && pin === account.pin) {
-                localStorage.setItem('geo_session', JSON.stringify({ role: 'user', username: username }));
-                loadProfileData();
-                navTo('view-home');
-            } else {
-                alert("Username atau PIN salah!");
-            }
+        if (data.profile) {
+            localStorage.setItem('geo_profile_' + username, JSON.stringify(data.profile));
+        } else if (!localStorage.getItem('geo_profile_' + username)) {
+            localStorage.setItem('geo_profile_' + username, JSON.stringify({
+                name: username.toUpperCase(),
+                job: 'STAFF',
+                nip: '-',
+                imgBase64: 'https://via.placeholder.com/150'
+            }));
         }
+
+        showToast(data.message || '✓ Berhasil!', 'success');
+        loadProfileData();
+        navTo('view-home');
+
+    } catch (err) {
+        showToast('❌ ' + err.message, 'error');
+    } finally {
+        hideLoader();
+        document.getElementById('btn-login-action').disabled = false;
+    }
+}
+
+// ============================================================
+// LOGOUT
+// ============================================================
+function handleLogout() {
+    if (confirm('Yakin ingin mengakhiri sesi saat ini?')) {
+        clearSession();
+        location.reload();
+    }
+}
+
+// ============================================================
+// PROFIL — LOAD, SAVE, UPDATE GAMBAR
+// ============================================================
+function loadProfileData() {
+    const session = getSession();
+    if (!session) return;
+
+    const profStr = localStorage.getItem('geo_profile_' + session.username);
+    const prof = profStr
+        ? JSON.parse(profStr)
+        : { name: session.username, job: 'STAFF', nip: '-', imgBase64: 'https://via.placeholder.com/150' };
+
+    document.getElementById('prof-name').innerText = prof.name;
+    document.getElementById('prof-job').innerText  = prof.job;
+    document.getElementById('prof-nip').innerText  = prof.nip;
+    document.getElementById('prof-img').src         = prof.imgBase64;
+
+    document.getElementById('home-prof-name').innerText = session.role === 'hr' ? 'ADMIN HRD' : prof.name;
+    document.getElementById('home-prof-img').src         = prof.imgBase64;
+
+    const hrPanel = document.getElementById('hr-panel');
+    if (session.role === 'hr') {
+        hrPanel.classList.remove('hidden');
+        document.getElementById('action-buttons-container').style.display = 'none';
+    } else {
+        hrPanel.classList.add('hidden');
+        document.getElementById('action-buttons-container').style.display = 'flex';
     }
 
-    function handleLogout() {
-        if(confirm("Yakin ingin mengakhiri sesi saat ini?")) {
-            localStorage.removeItem('geo_session');
-            location.reload();
-        }
-    }
+    fetchProfileFromServer(session.username);
+    updateHomeSummary();
+}
 
-    // ============================================
-    // ISOLATED PROFILE PERSISTENCE
-    // ============================================
-    function initDefaultProfile(username) {
-        // Profil standar saat Karyawan baru daftar
-        const defaultProf = { 
-            name: "REZA ALHASNY", 
-            job: 'IT SUPPORT', 
-            nip: '10015502', 
-            imgBase64: 'https://via.placeholder.com/150' 
-        };
-        localStorage.setItem('geo_profile_' + username, JSON.stringify(defaultProf));
+async function fetchProfileFromServer(username) {
+    try {
+        const data = await apiFetch('/user/profile.php?username=' + encodeURIComponent(username));
+        if (data.success && data.profile) {
+            const existing = JSON.parse(localStorage.getItem('geo_profile_' + username) || '{}');
+            const merged   = { ...existing, ...data.profile };
+            localStorage.setItem('geo_profile_' + username, JSON.stringify(merged));
+
+            document.getElementById('prof-name').innerText    = merged.name;
+            document.getElementById('prof-job').innerText     = merged.job;
+            document.getElementById('prof-nip').innerText     = merged.nip;
+            if (merged.imgBase64) {
+                document.getElementById('prof-img').src      = merged.imgBase64;
+                document.getElementById('home-prof-img').src = merged.imgBase64;
+            }
+            const sess = getSession();
+            if (sess && sess.role !== 'hr') {
+                document.getElementById('home-prof-name').innerText = merged.name;
+            }
+        }
+    } catch (_) { }
+}
+
+async function saveProfileData() {
+    const session = getSession();
+    if (!session) return;
+
+    const name      = document.getElementById('prof-name').innerText.trim();
+    const job       = document.getElementById('prof-job').innerText.trim();
+    const nip       = document.getElementById('prof-nip').innerText.trim();
+    const imgBase64 = document.getElementById('prof-img').src;
+
+    const profObj = { name, job, nip, imgBase64 };
+    localStorage.setItem('geo_profile_' + session.username, JSON.stringify(profObj));
+
+    showLoader('Menyimpan profil...');
+    try {
+        await apiFetch('/user/profile.php', {
+            method: 'POST',
+            body: JSON.stringify({ username: session.username, ...profObj })
+        });
+        showToast('✓ Profil berhasil disimpan!', 'success');
+    } catch (_) {
+        showToast('⚠️ Tersimpan lokal. Sinkronisasi server gagal.', '');
+    } finally {
+        hideLoader();
         loadProfileData();
     }
+}
 
-    function loadProfileData() {
-        const session = getSession();
-        if(!session) return;
+function updateImg(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('prof-img').src = e.target.result;
+            saveProfileData();
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
-        // Ambil profil khusus milik username yang sedang login
-        const profStr = localStorage.getItem('geo_profile_' + session.username);
-        const prof = profStr ? JSON.parse(profStr) : { name: session.username, job: 'STAFF', nip: '-', imgBase64: 'https://via.placeholder.com/150' };
+// ============================================================
+// NAVIGASI
+// ============================================================
+function navTo(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
 
-        document.getElementById('prof-name').innerText = prof.name;
-        document.getElementById('prof-job').innerText = prof.job;
-        document.getElementById('prof-nip').innerText = prof.nip;
-        document.getElementById('prof-img').src = prof.imgBase64;
-        
-        document.getElementById('home-prof-name').innerText = session.role === 'hr' ? 'ADMIN HRD' : prof.name;
-        document.getElementById('home-prof-img').src = prof.imgBase64;
-
-        // Tampilkan/Sembunyikan Panel Export Data HRD
-        const hrPanel = document.getElementById('hr-panel');
-        if(session.role === 'hr') {
-            hrPanel.classList.remove('hidden');
-            document.getElementById('action-buttons-container').style.display = 'none'; // Sembunyikan tombol absen untuk HRD
-        } else {
-            hrPanel.classList.add('hidden');
-            document.getElementById('action-buttons-container').style.display = 'flex'; // Munculkan tombol absen untuk karyawan
-        }
-
-        updateHomeSummary();
+    if (viewId === 'view-camera') {
+        document.getElementById('main-nav').style.display = 'none';
+        startCamera();
+    } else {
+        document.getElementById('main-nav').style.display = 'flex';
+        stopCamera();
     }
 
-    function saveProfileData() {
-        const session = getSession();
-        if(!session) return;
-
-        const name = document.getElementById('prof-name').innerText;
-        const job = document.getElementById('prof-job').innerText;
-        const nip = document.getElementById('prof-nip').innerText;
-        const imgBase64 = document.getElementById('prof-img').src;
-
-        // Simpan ke kunci unik milik user tersebut
-        localStorage.setItem('geo_profile_' + session.username, JSON.stringify({ name, job, nip, imgBase64 }));
-        loadProfileData(); 
-        alert("✓ Profil berhasil disimpan ke perangkat!");
+    const navMap = {
+        'view-home': 0, 'view-perm': 1,
+        'view-history': 2, 'view-submissions': 3, 'view-profile': 4
+    };
+    if (navMap[viewId] !== undefined) {
+        document.querySelectorAll('.nav-item')[navMap[viewId]].classList.add('active');
     }
 
-    function updateImg(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                document.getElementById('prof-img').src = e.target.result;
-                saveProfileData(); // Auto save
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
+    if (viewId === 'view-history')     renderHistory();
+    if (viewId === 'view-submissions') renderSubmissions();
+    if (viewId === 'view-home')        updateHomeSummary();
+}
 
-    // ============================================
-    // DATA EXPORT LOGIC (Master File)
-    // ============================================
-    function downloadData(type) {
-        let data = [];
-        let csvContent = "data:text/csv;charset=utf-8,";
-        
-        if(type === 'absensi') {
-            data = JSON.parse(localStorage.getItem('absensi') || '[]');
-            if(data.length === 0) { alert("Data Absensi masih kosong."); return; }
-            
-            csvContent += "Username Akun,Nama Pegawai,NIP,Tanggal,Jam Masuk,Jam Keluar,Status Kehadiran,Lat Masuk,Lng Masuk,Lat Keluar,Lng Keluar\n";
-            data.forEach(row => {
-                const usr = row.username || "-";
-                const nama = row.nama || "-";
-                const nip = row.nip || "-";
-                const timeIn = row.time ? row.time : "-";
-                const timeOut = row.timeKeluar ? row.timeKeluar : "-";
-                csvContent += `"${usr}","${nama}","${nip}","${row.date}","${timeIn}","${timeOut}","${row.status}","${row.lat}","${row.lng}","${row.latKeluar||'-'}","${row.lngKeluar||'-'}"\n`;
-            });
-            
-        } else if (type === 'izin') {
-            data = JSON.parse(localStorage.getItem('submissions') || '[]');
-            if(data.length === 0) { alert("Data Izin/Pengajuan masih kosong."); return; }
-            
-            csvContent += "Waktu Pengajuan,Username Akun,Nama Pegawai,NIP,Jenis Pengajuan,Tanggal Izin,Alasan/Keterangan\n";
-            data.forEach(row => {
-                const usr = row.username || "-";
-                const nama = row.nama || "-";
-                const nip = row.nip || "-";
-                csvContent += `"${row.submittedAt}","${usr}","${nama}","${nip}","${row.type}","${row.date}","${row.reason}"\n`;
-            });
-        }
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Rekap_${type.toUpperCase()}_${new Date().getTime()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    // ============================================
-    // CAMERA & ATTENDANCE FUNCTIONS (Tagging Username)
-    // ============================================
-    // ... [NavTo, Camera Control, GPS Logic remain exactly the same] ...
-    
-    function navTo(viewId) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        document.getElementById(viewId).classList.add('active');
-        
-        if(viewId === 'view-camera') { document.getElementById('main-nav').style.display = 'none'; startCamera(); } 
-        else { document.getElementById('main-nav').style.display = 'flex'; stopCamera(); }
-
-        const navMap = { 'view-home': 0, 'view-perm': 1, 'view-history': 2, 'view-submissions': 3, 'view-profile': 4 };
-        if(navMap[viewId] !== undefined) { document.querySelectorAll('.nav-item')[navMap[viewId]].classList.add('active'); }
-        
-        if(viewId === 'view-history') renderHistory();
-        if(viewId === 'view-submissions') renderSubmissions();
-        if(viewId === 'view-home') updateHomeSummary();
-    }
-
-    async function startCamera() {
-        try { stopCamera(); currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } }); document.getElementById('camera-video').srcObject = currentStream; document.getElementById('swap-camera-btn').classList.remove('hidden'); checkLocation(); } 
-        catch (err) { alert("Kamera Error: " + err.message); navTo('view-home'); }
-    }
-    function stopCamera() { if(currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; } }
-    async function swapCamera() { currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user'; await startCamera(); }
-
-    function checkLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                lastCoords.lat = pos.coords.latitude; lastCoords.lng = pos.coords.longitude;
-                const dist = calculateDistance(lastCoords.lat, lastCoords.lng, OFFICE_COORDS.lat, OFFICE_COORDS.lng);
-                const statusEl = document.getElementById('loc-status');
-                if(dist <= RADIUS_LIMIT) { statusEl.innerHTML = `<span style="color:#2ecc71">● Dalam Radius (${(dist/1000).toFixed(2)}km)</span>`; } 
-                else { statusEl.innerHTML = `<span style="color:#e74c3c">● Luar Radius (${(dist/1000).toFixed(2)}km)</span>`; }
-            }, () => { document.getElementById('loc-status').innerText = "GPS Error - Tidak dapat mengakses lokasi."; });
-        } else { document.getElementById('loc-status').innerText = "GPS tidak didukung di browser ini."; }
-    }
-
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; const dLat = (lat2-lat1) * Math.PI/180; const dLon = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2); return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-    }
-
-    function takePhoto() {
-        const video = document.getElementById('camera-video'); const canvas = document.getElementById('canvas'); const photo = document.getElementById('photo-result');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0);
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5); 
-        photo.src = compressedBase64; photo.classList.remove('hidden'); video.classList.add('hidden');
-        document.getElementById('camera-controls').classList.add('hidden'); document.getElementById('post-capture').classList.remove('hidden');
-        document.getElementById('swap-camera-btn').classList.add('hidden');
-        populateTimestamp(compressedBase64);
-    }
-
-    function populateTimestamp(photoBase64) {
-        const now = new Date();
-        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']; const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        const dateStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-        const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')} WIB`;
-        const coordsStr = `${lastCoords.lat.toFixed(6)}, ${lastCoords.lng.toFixed(6)}`;
-        document.getElementById('ts-date').innerText = dateStr; document.getElementById('ts-time').innerText = timeStr; document.getElementById('ts-coords').innerText = coordsStr;
-        document.getElementById('photo-timestamp').classList.remove('hidden');
-        capturedData = { date: dateStr, time: timeStr, coords: coordsStr, lat: lastCoords.lat, lng: lastCoords.lng, timestamp: now.getTime(), photo: photoBase64 };
-    }
-
-    function resetCamera() {
-        document.getElementById('photo-result').classList.add('hidden'); document.getElementById('camera-video').classList.remove('hidden');
-        document.getElementById('camera-controls').classList.remove('hidden'); document.getElementById('post-capture').classList.add('hidden');
-        document.getElementById('photo-timestamp').classList.add('hidden'); document.getElementById('swap-camera-btn').classList.remove('hidden'); capturedData = null;
-    }
-
-    function stopCamAndBack() { stopCamera(); navTo('view-home'); }
-
-    function openCameraMode(mode) {
-        attendanceMode = mode; const label = document.getElementById('camera-mode-label');
-        if(mode === 'masuk') { label.innerHTML = '📥 ABSEN MASUK'; label.style.background = 'rgba(231,76,60,0.85)'; } 
-        else { label.innerHTML = '📤 ABSEN KELUAR'; label.style.background = 'rgba(39,174,96,0.85)'; }
-        navTo('view-camera');
-    }
-
-    function sendAttendance() {
-        if(!capturedData) return;
-        const session = getSession();
-        if(!session) return;
-
-        let logs = JSON.parse(localStorage.getItem('absensi') || '[]');
-        const todayStr = capturedData.date;
-
-        // Ambil data profil karyawan
-        const profStr = localStorage.getItem('geo_profile_' + session.username);
-        const prof = profStr ? JSON.parse(profStr) : {};
-        const empName = prof.name || session.username;
-        const empNip = prof.nip || "-";
-
-        if(attendanceMode === 'masuk') {
-            logs.unshift({ 
-                username: session.username, nama: empName, nip: empNip, // TAGGING DATA
-                date: todayStr, time: capturedData.time.replace(' WIB', ''), timeKeluar: null,
-                status: 'Hadir', lat: capturedData.lat.toFixed(6), lng: capturedData.lng.toFixed(6),
-                timestamp: capturedData.timestamp, photoMasuk: capturedData.photo
-            });
-            alert("✓ Absen Masuk berhasil dicatat!");
-        } else {
-            // Cari data absen masuk MILIK USER INI hari ini
-            const todayLog = logs.find(l => l.date === todayStr && !l.timeKeluar && l.username === session.username);
-            if(todayLog) {
-                todayLog.timeKeluar = capturedData.time.replace(' WIB', ''); todayLog.latKeluar = capturedData.lat.toFixed(6);
-                todayLog.lngKeluar = capturedData.lng.toFixed(6); todayLog.photoKeluar = capturedData.photo;
-            } else {
-                logs.unshift({
-                    username: session.username, nama: empName, nip: empNip, // TAGGING DATA
-                    date: todayStr, time: null, timeKeluar: capturedData.time.replace(' WIB', ''),
-                    status: 'Keluar', lat: capturedData.lat.toFixed(6), lng: capturedData.lng.toFixed(6),
-                    latKeluar: capturedData.lat.toFixed(6), lngKeluar: capturedData.lng.toFixed(6),
-                    timestamp: capturedData.timestamp, photoKeluar: capturedData.photo
-                });
-            }
-            alert("✓ Absen Keluar berhasil dicatat!");
-        }
-        
-        if(logs.length > 50) logs = logs.slice(0, 50);
-        localStorage.setItem('absensi', JSON.stringify(logs)); capturedData = null; navTo('view-home');
-    }
-
-    // ============================================
-    // RENDERING LOGIC (Filtered by Username)
-    // ============================================
-    function renderHistory() {
-        const session = getSession();
-        if(!session) return;
-
-        const container = document.getElementById('history-list'); 
-        let allLogs = JSON.parse(localStorage.getItem('absensi') || '[]');
-        
-        // FILTER: Hanya ambil data milik user yang sedang login
-        let userLogs = allLogs.filter(log => log.username === session.username);
-
-        if(userLogs.length === 0) { container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>Belum ada riwayat absensi.</p></div>`; return; }
-        
-        container.innerHTML = userLogs.map(log => `
-            <div class="card" style="margin: 10px 0; padding: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display: flex; align-items: center;">
-                        ${log.photoMasuk || log.photoKeluar ? `<img src="${log.photoMasuk || log.photoKeluar}" class="history-img-thumb">` : ''}
-                        <div>
-                            <b style="font-size: 0.95rem;">${log.date}</b><br>
-                            <span style="color:var(--accent); font-weight:bold; font-size:0.85rem;">📥 Masuk: ${log.time ? log.time + ' WIB' : '<span style="color:#bbb">-</span>'}</span><br>
-                            <span style="color:var(--success); font-weight:bold; font-size:0.85rem;">📤 Keluar: ${log.timeKeluar ? log.timeKeluar + ' WIB' : '<span style="color:#bbb; font-weight:normal;">Belum</span>'}</span>
-                        </div>
-                    </div>
-                    <span class="status-badge" style="background:${log.timeKeluar ? 'var(--success)' : 'var(--warning)'}">${log.timeKeluar ? 'Lengkap' : log.status}</span>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function updateHomeSummary() {
-        const session = getSession();
-        if(!session) return;
-
-        let allLogs = JSON.parse(localStorage.getItem('absensi') || '[]'); 
-        
-        // FILTER: Hanya hitung dan cek status absen milik user ini
-        let userLogs = allLogs.filter(log => log.username === session.username);
-        
-        const now = new Date();
-        const thisMonthLogs = userLogs.filter(log => { if(!log.timestamp) return false; const logDate = new Date(log.timestamp); return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear(); });
-        
-        document.getElementById('summary-total').innerText = `${thisMonthLogs.length} Kali`; document.getElementById('summary-hadir').innerText = `${thisMonthLogs.length} Hari`;
-        const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']; const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-        const todayStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-
-        const todayLog = userLogs.find(l => l.date === todayStr);
-        const btnCheckin = document.getElementById('btn-checkin'); const btnCheckout = document.getElementById('btn-checkout');
-        const checkoutStatus = document.getElementById('checkout-status'); const todayStatus = document.getElementById('today-status');
-
-        if(todayLog) {
-            if(todayLog.time) { todayStatus.innerText = `Sudah Masuk (${todayLog.time.split(' ')[0]})`; btnCheckin.style.display = 'none'; }
-            if(todayLog.timeKeluar) { checkoutStatus.innerText = `Sudah Keluar (${todayLog.timeKeluar.split(' ')[0]})`; checkoutStatus.style.display = 'block'; btnCheckout.style.display = 'none'; } 
-            else if(todayLog.time) { btnCheckout.style.display = 'block'; }
-        } else {
-            todayStatus.innerText = 'Belum Absen'; btnCheckin.style.display = 'block'; btnCheckout.style.display = 'none'; checkoutStatus.style.display = 'none';
-        }
-    }
-
-    // ============================================
-    // PERMISSIONS LOGIC (Filtered by Username)
-    // ============================================
-    function submitPermission() {
-        const session = getSession();
-        if(!session) return;
-
-        const type = document.getElementById('perm-type').value; const date = document.getElementById('perm-date').value; const reason = document.getElementById('perm-reason').value.trim();
-        if(!date || !reason) { alert("❌ Harap isi tanggal dan keterangan!"); return; }
-        
-        let submissions = JSON.parse(localStorage.getItem('submissions') || '[]'); const now = new Date();
-        
-        // Ambil data profil karyawan
-        const profStr = localStorage.getItem('geo_profile_' + session.username);
-        const prof = profStr ? JSON.parse(profStr) : {};
-        const empName = prof.name || session.username;
-        const empNip = prof.nip || "-";
-
-        submissions.unshift({ 
-            id: now.getTime(), type: type, date: date, reason: reason, 
-            username: session.username, nama: empName, nip: empNip, // TAGGING DATA
-            submittedAt: now.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 
-            timestamp: now.getTime() 
+// ============================================================
+// KAMERA
+// ============================================================
+async function startCamera() {
+    try {
+        stopCamera();
+        currentStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacingMode }
         });
-        localStorage.setItem('submissions', JSON.stringify(submissions)); alert(`✓ Pengajuan ${type} berhasil dikirim!`);
-        document.getElementById('perm-date').value = ''; document.getElementById('perm-reason').value = '';
+        document.getElementById('camera-video').srcObject = currentStream;
+        document.getElementById('swap-camera-btn').classList.remove('hidden');
+        checkLocation();
+    } catch (err) {
+        showToast('Kamera Error: ' + err.message, 'error');
+        navTo('view-home');
     }
+}
 
-    function renderSubmissions() {
-        const session = getSession();
-        if(!session) return;
+function stopCamera() {
+    if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
+}
 
-        const container = document.getElementById('submissions-list'); 
-        let allSubmissions = JSON.parse(localStorage.getItem('submissions') || '[]');
-        
-        // FILTER: Hanya ambil izin milik user ini
-        let userSubmissions = allSubmissions.filter(sub => sub.username === session.username);
+async function swapCamera() {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    await startCamera();
+}
 
-        if(userSubmissions.length === 0) { container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><p>Belum ada pengajuan.</p></div>`; return; }
-        
-        container.innerHTML = userSubmissions.map(sub => {
-            let badgeColor = sub.type === 'Cuti' ? 'var(--info)' : sub.type === 'Sakit' ? 'var(--danger)' : sub.type === 'Lembur' ? 'var(--success)' : 'var(--warning)';
+function checkLocation() {
+    if (!navigator.geolocation) {
+        document.getElementById('loc-status').innerText = 'GPS tidak didukung di browser ini.';
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(pos => {
+        lastCoords.lat = pos.coords.latitude;
+        lastCoords.lng = pos.coords.longitude;
+        const dist     = calculateDistance(lastCoords.lat, lastCoords.lng, OFFICE_COORDS.lat, OFFICE_COORDS.lng);
+        const statusEl = document.getElementById('loc-status');
+        if (dist <= RADIUS_LIMIT) {
+            statusEl.innerHTML = `<span style="color:#2ecc71">● Dalam Radius (${(dist / 1000).toFixed(2)}km)</span>`;
+        } else {
+            statusEl.innerHTML = `<span style="color:#e74c3c">● Luar Radius (${(dist / 1000).toFixed(2)}km)</span>`;
+        }
+    }, () => {
+        document.getElementById('loc-status').innerText = 'GPS Error - Tidak dapat mengakses lokasi.';
+    });
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R    = 6371e3;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a    = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+               + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+               * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+function takePhoto() {
+    const video  = document.getElementById('camera-video');
+    const canvas = document.getElementById('canvas');
+    const photo  = document.getElementById('photo-result');
+
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    const base64 = canvas.toDataURL('image/jpeg', 0.5);
+    photo.src = base64;
+    photo.classList.remove('hidden');
+    video.classList.add('hidden');
+
+    document.getElementById('camera-controls').classList.add('hidden');
+    document.getElementById('post-capture').classList.remove('hidden');
+    document.getElementById('swap-camera-btn').classList.add('hidden');
+
+    populateTimestamp(base64);
+}
+
+function populateTimestamp(photoBase64) {
+    const now    = new Date();
+    const days   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const dateStr   = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    const timeStr   = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')} WIB`;
+    const coordsStr = `${lastCoords.lat.toFixed(6)}, ${lastCoords.lng.toFixed(6)}`;
+
+    document.getElementById('ts-date').innerText  = dateStr;
+    document.getElementById('ts-time').innerText  = timeStr;
+    document.getElementById('ts-coords').innerText = coordsStr;
+    document.getElementById('photo-timestamp').classList.remove('hidden');
+
+    capturedData = {
+        date: dateStr, time: timeStr, coords: coordsStr,
+        lat: lastCoords.lat, lng: lastCoords.lng,
+        timestamp: now.getTime(), photo: photoBase64
+    };
+}
+
+function resetCamera() {
+    document.getElementById('photo-result').classList.add('hidden');
+    document.getElementById('camera-video').classList.remove('hidden');
+    document.getElementById('camera-controls').classList.remove('hidden');
+    document.getElementById('post-capture').classList.add('hidden');
+    document.getElementById('photo-timestamp').classList.add('hidden');
+    document.getElementById('swap-camera-btn').classList.remove('hidden');
+    capturedData = null;
+}
+
+function stopCamAndBack() { stopCamera(); navTo('view-home'); }
+
+function openCameraMode(mode) {
+    attendanceMode = mode;
+    const label    = document.getElementById('camera-mode-label');
+    if (mode === 'masuk') {
+        label.innerHTML       = '📥 ABSEN MASUK';
+        label.style.background = 'rgba(231,76,60,0.85)';
+    } else {
+        label.innerHTML       = '📤 ABSEN KELUAR';
+        label.style.background = 'rgba(39,174,96,0.85)';
+    }
+    navTo('view-camera');
+}
+
+// ============================================================
+// KIRIM ABSENSI → API
+// ============================================================
+async function sendAttendance() {
+    if (!capturedData) return;
+
+    const session = getSession();
+    if (!session) return;
+
+    const endpoint = attendanceMode === 'masuk'
+        ? '/attendance/checkin.php'
+        : '/attendance/checkout.php';
+
+    const payload = {
+        username  : session.username,
+        photo     : capturedData.photo,
+        lat       : capturedData.lat,
+        lng       : capturedData.lng,
+        timestamp : capturedData.timestamp
+    };
+
+    showLoader(attendanceMode === 'masuk' ? 'Mengirim absen masuk...' : 'Mengirim absen keluar...');
+    document.getElementById('btn-send').disabled = true;
+
+    try {
+        const data = await apiFetch(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        showToast(data.message || '✓ Absensi berhasil!', 'success');
+        capturedData = null;
+        navTo('view-home');
+
+    } catch (err) {
+        showToast('❌ ' + err.message, 'error');
+    } finally {
+        hideLoader();
+        document.getElementById('btn-send').disabled = false;
+    }
+}
+
+// ============================================================
+// UPDATE SUMMARY HOME → API
+// ============================================================
+async function updateHomeSummary() {
+    const session = getSession();
+    if (!session) return;
+
+    document.getElementById('summary-hadir').innerText = '- Hari';
+    document.getElementById('summary-total').innerText = '- Kali';
+    document.getElementById('today-status').innerText  = 'Memuat...';
+
+    try {
+        const data = await apiFetch('/attendance/summary.php?username=' + encodeURIComponent(session.username));
+
+        document.getElementById('summary-hadir').innerText = (data.hadir  ?? 0) + ' Hari';
+        document.getElementById('summary-total').innerText = (data.total  ?? 0) + ' Kali';
+
+        const todayStatus    = document.getElementById('today-status');
+        const checkoutStatus = document.getElementById('checkout-status');
+        const btnCheckin     = document.getElementById('btn-checkin');
+        const btnCheckout    = document.getElementById('btn-checkout');
+
+        const timeIn  = data.today_in  || null;
+        const timeOut = data.today_out || null;
+
+        if (timeIn) {
+            todayStatus.innerText        = `Sudah Masuk (${timeIn.substring(0, 5)})`;
+            btnCheckin.style.display     = 'none';
+            if (timeOut) {
+                checkoutStatus.innerText     = `Sudah Keluar (${timeOut.substring(0, 5)})`;
+                checkoutStatus.style.display = 'block';
+                btnCheckout.style.display    = 'none';
+            } else {
+                checkoutStatus.style.display = 'none';
+                btnCheckout.style.display    = 'block';
+            }
+        } else {
+            todayStatus.innerText        = 'Belum Absen';
+            btnCheckin.style.display     = 'block';
+            btnCheckout.style.display    = 'none';
+            checkoutStatus.style.display = 'none';
+        }
+
+    } catch (_) {
+        document.getElementById('today-status').innerText  = 'Gagal memuat';
+        document.getElementById('summary-hadir').innerText = '?';
+        document.getElementById('summary-total').innerText = '?';
+    }
+}
+
+// ============================================================
+// RENDER HISTORY → API
+// ============================================================
+async function renderHistory() {
+    const session = getSession();
+    if (!session) return;
+
+    const container = document.getElementById('history-list');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Memuat data...</p></div>';
+
+    try {
+        const data = await apiFetch('/attendance/history.php?username=' + encodeURIComponent(session.username));
+
+        const logs = data.history || data; 
+        if (!Array.isArray(logs) || logs.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>Belum ada riwayat absensi.</p></div>';
+            return;
+        }
+
+        container.innerHTML = logs.map(log => {
+            const photoSrc = log.photo_in || log.photo_out || null;
+            const timeIn   = log.time_in  ? log.time_in.substring(0, 5)  + ' WIB' : '<span style="color:#bbb">-</span>';
+            const timeOut  = log.time_out ? log.time_out.substring(0, 5) + ' WIB' : '<span style="color:#bbb; font-weight:normal;">Belum</span>';
+            const badgeBg  = log.time_out ? 'var(--success)' : 'var(--warning)';
+            const badgeTxt = log.time_out ? 'Lengkap' : (log.status || 'Hadir');
+
+            return `
+                <div class="card" style="margin: 10px 0; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="display: flex; align-items: center;">
+                            ${photoSrc ? `<img src="${photoSrc}" class="history-img-thumb">` : ''}
+                            <div>
+                                <b style="font-size: 0.95rem;">${log.date || '-'}</b><br>
+                                <span style="color:var(--accent); font-weight:bold; font-size:0.85rem;">📥 Masuk: ${timeIn}</span><br>
+                                <span style="color:var(--success); font-weight:bold; font-size:0.85rem;">📤 Keluar: ${timeOut}</span>
+                            </div>
+                        </div>
+                        <span class="status-badge" style="background:${badgeBg}">${badgeTxt}</span>
+                    </div>
+                </div>`;
+        }).join('');
+
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Gagal memuat: ${err.message}</p></div>`;
+    }
+}
+
+// ============================================================
+// SUBMIT IZIN → API
+// ============================================================
+async function submitPermission() {
+    const session = getSession();
+    if (!session) return;
+
+    const type   = document.getElementById('perm-type').value;
+    const date   = document.getElementById('perm-date').value;
+    const reason = document.getElementById('perm-reason').value.trim();
+
+    if (!date || !reason) { showToast('❌ Harap isi tanggal dan keterangan!', 'error'); return; }
+
+    showLoader('Mengirim pengajuan...');
+    try {
+        const data = await apiFetch('/submission/create.php', {
+            method: 'POST',
+            body: JSON.stringify({ username: session.username, type, date, reason })
+        });
+
+        showToast(data.message || `✓ Pengajuan ${type} berhasil dikirim!`, 'success');
+        document.getElementById('perm-date').value   = '';
+        document.getElementById('perm-reason').value = '';
+
+    } catch (err) {
+        showToast('❌ ' + err.message, 'error');
+    } finally {
+        hideLoader();
+    }
+}
+
+// ============================================================
+// RENDER SUBMISSIONS → API
+// ============================================================
+async function renderSubmissions() {
+    const session = getSession();
+    if (!session) return;
+
+    const container = document.getElementById('submissions-list');
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Memuat data...</p></div>';
+
+    try {
+        const data = await apiFetch('/submission/list.php?username=' + encodeURIComponent(session.username));
+
+        const subs = data.submissions || data;
+        if (!Array.isArray(subs) || subs.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>Belum ada pengajuan.</p></div>';
+            return;
+        }
+
+        container.innerHTML = subs.map(sub => {
+            const badgeColor = sub.type === 'Cuti'   ? 'var(--info)'
+                             : sub.type === 'Sakit'  ? 'var(--danger)'
+                             : sub.type === 'Lembur' ? 'var(--success)'
+                             : 'var(--warning)';
+            const statusColor = sub.status === 'Disetujui'  ? 'var(--success)'
+                              : sub.status === 'Ditolak'    ? 'var(--danger)'
+                              : 'var(--warning)';
+            const statusLabel = sub.status || 'Pending';
+            const dateFormatted = sub.date ? formatDateIndo(sub.date) : '-';
+
             return `
                 <div class="submission-card">
                     <div class="submission-header">
-                        <div><div class="submission-type">${sub.type}</div><div class="submission-date">Diajukan: ${sub.submittedAt}</div></div>
-                        <span class="status-badge" style="background:${badgeColor}">Pending</span>
+                        <div>
+                            <div class="submission-type">${sub.type}</div>
+                            <div class="submission-date">Diajukan: ${sub.submitted_at || sub.submittedAt || '-'}</div>
+                        </div>
+                        <span class="status-badge" style="background:${statusColor}">${statusLabel}</span>
                     </div>
-                    <div class="submission-detail"><strong>📅 Tanggal:</strong> ${formatDateIndo(sub.date)}</div>
+                    <div class="submission-detail"><strong>📅 Tanggal:</strong> ${dateFormatted}</div>
                     <div class="submission-reason">💬 "${sub.reason}"</div>
-                    <button class="delete-btn" onclick="deleteSubmission(${sub.id})" style="background:var(--danger); color:white; border:none; padding:5px 10px; border-radius:5px; margin-top:10px; font-size:0.75rem; cursor:pointer;">Hapus</button>
-                </div>
-            `;
+                </div>`;
         }).join('');
-    }
 
-    function deleteSubmission(id) {
-        if(!confirm("Hapus pengajuan ini?")) return;
-        let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
-        localStorage.setItem('submissions', JSON.stringify(submissions.filter(s => s.id !== id))); renderSubmissions();
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Gagal memuat: ${err.message}</p></div>`;
     }
+}
 
-    function formatDateIndo(dateStr) {
-        const date = new Date(dateStr + 'T00:00:00'); const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+// ============================================================
+// EKSPOR DATA HRD → tetap ambil dari server via fetch
+// ============================================================
+async function downloadData(type) {
+    showLoader('Mengunduh data ' + type + '...');
+    try {
+        const endpoint = type === 'absensi'
+            ? '/attendance/export.php'
+            : '/submission/export.php';
+
+        const res  = await fetch(API + endpoint, {
+            headers: { 'X-Username': currentSession?.username || '' }
+        });
+
+        if (!res.ok) throw new Error('Server error ' + res.status);
+
+        const contentType = res.headers.get('Content-Type') || '';
+        if (contentType.includes('text/csv') || contentType.includes('application/octet')) {
+            const blob     = await res.blob();
+            const url      = URL.createObjectURL(blob);
+            const link     = document.createElement('a');
+            link.href      = url;
+            link.download  = `Rekap_${type.toUpperCase()}_${Date.now()}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('✓ Data berhasil diunduh!', 'success');
+            return;
+        }
+
+        const data = await res.json();
+        const rows = data.data || data;
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+            showToast('Data masih kosong.', '');
+            return;
+        }
+
+        let csvContent = 'data:text/csv;charset=utf-8,';
+
+        if (type === 'absensi') {
+            csvContent += 'Username,Nama,NIP,Tanggal,Jam Masuk,Jam Keluar,Status,Lat Masuk,Lng Masuk,Lat Keluar,Lng Keluar\n';
+            rows.forEach(r => {
+                csvContent += `"${r.username||'-'}","${r.nama||r.name||'-'}","${r.nip||'-'}","${r.date||'-'}","${r.time_in||r.time||'-'}","${r.time_out||r.timeKeluar||'-'}","${r.status||'-'}","${r.lat||'-'}","${r.lng||'-'}","${r.lat_out||r.latKeluar||'-'}","${r.lng_out||r.lngKeluar||'-'}"\n`;
+            });
+        } else {
+            csvContent += 'Waktu Pengajuan,Username,Nama,NIP,Jenis,Tanggal,Alasan\n';
+            rows.forEach(r => {
+                csvContent += `"${r.submitted_at||r.submittedAt||'-'}","${r.username||'-'}","${r.nama||r.name||'-'}","${r.nip||'-'}","${r.type||'-'}","${r.date||'-'}","${r.reason||'-'}"\n`;
+            });
+        }
+
+        const link     = document.createElement('a');
+        link.href      = encodeURI(csvContent);
+        link.download  = `Rekap_${type.toUpperCase()}_${Date.now()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('✓ Data berhasil diunduh!', 'success');
+
+    } catch (err) {
+        showToast('❌ Gagal unduh: ' + err.message, 'error');
+    } finally {
+        hideLoader();
     }
+}
+
+// ============================================================
+// FORMAT TANGGAL INDONESIA
+// ============================================================
+function formatDateIndo(dateStr) {
+    const date   = new Date(dateStr + 'T00:00:00');
+    const days   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
 </script>
 </body>
 </html>
